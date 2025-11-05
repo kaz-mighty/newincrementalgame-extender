@@ -1,23 +1,25 @@
 # Newincremental Extender
 
-This is a user script for [newincrementalgame](https://dem08656775.github.io/newincrementalgame/).
+This is a user script for [newincrementalgame](https://dem08656775.github.io/newincrementalgame/).  
+Since the game is only available in Japanese, the following will only be written in Japanese.
 
 これは[newincrementalgame](https://dem08656775.github.io/newincrementalgame/)用のユーザースクリプトです。
 
 
 ## 使い方
 
-`src/NewIncrementalExtender.js`をTampermonkey等に張り付けてください
+`src/NewIncrementalExtender.js`をTampermonkey等に張り付けてください。
 
 ## 機能
 
-各種自動化器は手動時のボタン操作をシミュレートしているため、勝手にタブが切り替わることがあります。(操作間隔0.25s)
-ただし`window.confirm()`はスキップします。
+各種自動化器は手動時のボタン操作をシミュレートしているため、勝手にタブが切り替わることがあります。(操作間隔0.25s)  
+ただし`window.confirm()`や`window.prompt()`はスキップ/自動入力します。
 
 ### (階位)挑戦自動化器
 
 自動で挑戦を達成してくれます。
-自動購入器、自動リセット器が無くても自動で操作してくれます。
+
+自動購入器、自動リセット器は無くても自動で操作してくれます。
 モード型がある場合、効果があるなら自動で使用します。
 
 階位挑戦の場合、自動昇段器稼働中は挑戦を開始しません。
@@ -31,9 +33,21 @@ This is a user script for [newincrementalgame](https://dem08656775.github.io/new
 これにより、非アクティブ時もゲームが減速しなくなります。
 (Chromeでのみ確認)
 
+### 冠位リセット自動化
+
+自動で冠位リセットを繰り返します。
+
+あらかじめ、上位効力型1を階位稼ぎ用、上位効力型2をポイント稼ぎ用に設定しておく必要があります。
+また、自動購入器5つが使用可能である必要があります。
+(上位効力型2は自動昇階リセット器がOFFでもよい)
+
+(下位)効力と鋳片は自動化中は操作されません。
+
+昇冠を目指す際は自動で**煌き100消費を繰り返します**。  
+また、自動昇階器がONのまま効力変更で無効化されている場合があるため、終了後は注意しましょう。
+
 
 ## todo
 
-- 冠位リセット自動化
 - 裏段位自動化
   (作者はもう不要なため本当に実装するかは未定…)
