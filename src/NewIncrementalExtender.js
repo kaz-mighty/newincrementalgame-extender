@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NewIncrementalExtender
 // @namespace    kaz_mighty
-// @version      2025-11-06
+// @version      1.1.1
 // @description  新しい放置ゲームの拡張
 // @author       kaz_mighty
 // @match        https://dem08656775.github.io/newincrementalgame/*
@@ -315,7 +315,7 @@ function AddComponent() {
 
             toggleAutoChallenge(isRank) {
                 if (this.autoChallenge.intervalId === 0) {
-                    this.autoChallenge.intervalId = setInterval(this.updateChallenge, 250);
+                    this.autoChallenge.intervalId = setInterval(this.updateChallenge, 400);
                     this.autoChallenge.isRank = isRank;
                     return;
                 }
@@ -430,7 +430,7 @@ function AddComponent() {
                 if (!confirm("自動冠位リセットを開始しますか? これにより、段位と階位が失われるほか、煌きが自動で消費されます。")) {
                     return;
                 }
-                state.intervalId = setInterval(this.updateAutoCrownReset, 250);
+                state.intervalId = setInterval(this.updateAutoCrownReset, 400);
                 state.phase = 0;
                 state.autoResetPhase = 0;
             },

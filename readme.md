@@ -10,9 +10,11 @@ Since the game is only available in Japanese, the following will only be written
 
 `src/NewIncrementalExtender.js`をTampermonkey等に張り付けてください。
 
+
 ## 機能
 
-各種自動化器は手動時のボタン操作をシミュレートしているため、勝手にタブが切り替わることがあります。(操作間隔0.25s)  
+各種自動化器は手動時のボタン操作をシミュレートしています。(操作間隔0.4s, 輝き消費のみ0.1s)  
+そのため、(ゲーム内の)タブも勝手に切り替わります。  
 ただし`window.confirm()`や`window.prompt()`はスキップ/自動入力します。
 
 ### (階位)挑戦自動化器
@@ -25,7 +27,7 @@ Since the game is only available in Japanese, the following will only be written
 階位挑戦の場合、自動昇段器稼働中は挑戦を開始しません。
 停止段位でいい感じに制御してください。
 
-既に達成済みの挑戦中の場合はなにもしません。(誤操作によるリセット防止)
+既に達成済みの挑戦中の場合はなにもしません。(誤操作によるリセット防止のため)
 
 ### 無音再生
 
@@ -49,5 +51,6 @@ Since the game is only available in Japanese, the following will only be written
 
 ## todo
 
+- 冠位リセット自動化の手順の説明(一部誤解されそうな挙動がある)
 - 裏段位自動化
   (作者はもう不要なため本当に実装するかは未定…)
