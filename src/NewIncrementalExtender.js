@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NewIncrementalExtender
 // @namespace    kaz_mighty
-// @version      2.0.0-beta.1
+// @version      2.0.0-beta.3
 // @description  新しい放置ゲームの拡張
 // @author       kaz_mighty
 // @match        https://dem08656775.github.io/newincrementalgame/*
@@ -43,13 +43,13 @@ class GameConnector {
 
         this.originalConfirm = unsafeWindow.confirm.bind(undefined);
         this.skipConfirm = false;
-        unsafeWindow.confirm = this.confirm.bind(this);
+        unsafeWindow.confirm = this.#confirm.bind(this);
         this.originalPrompt = unsafeWindow.prompt.bind(undefined);
         this.injectPrompt = null;
-        unsafeWindow.prompt = this.prompt.bind(this);
+        unsafeWindow.prompt = this.#prompt.bind(this);
     }
 
-    confirm(message) {
+    #confirm(message) {
         if (this.skipConfirm) {
             console.log(`confirm skip. message: ${message}`);
             return true;
@@ -57,7 +57,7 @@ class GameConnector {
         return this.originalConfirm(message);
     }
 
-    prompt(message, _default) {
+    #prompt(message, _default) {
         if (this.injectPrompt != null) {
             console.log(`prompt skip. message: ${message}`);
             return this.injectPrompt;
@@ -65,193 +65,165 @@ class GameConnector {
         return this.originalPrompt(message, _default);
     }
 
+
+    /** ボタンをクリックします
+     * @param {?HTMLElement} button 
+     * @param {boolean} checkAvailability
+     * @param {boolean} skipConfirm
+     * @param {?string} injectPrompt
+     * @returns {boolean} 操作に成功したかどうかを返す
+     */
+    #click(button, checkAvailability = false, skipConfirm = false, injectPrompt = null) {
+        if (button == null) {return false;}
+        if (checkAvailability && button.classList.contains("unavailable")) {
+            return false;
+        }
+        try {
+            this.skipConfirm = skipConfirm;
+            this.injectPrompt = injectPrompt;
+            // Chromium系は focusVisible に未対応
+            // button.focus({preventScroll: true, focusVisible: true});
+            button.click();
+        } finally {
+            this.skipConfirm = false;
+            this.injectPrompt = null;
+        }
+        return true;
+    }
+
+    /* ヘッダー操作 */
+    #searchHeaderTypeButton(text) {
+        const pointSiblings = document.getElementById("coinamount").parentElement.children;
+        for (let i = 0; i < 6; i++) {
+            if (pointSiblings[i]?.firstElementChild?.innerText === text) {
+                return pointSiblings[i].firstElementChild;
+            }
+        }
+    }
+    useModeType() {
+        return this.#click(this.#searchHeaderTypeButton("モード型適用"));
+    }
+    useRankBonusType(i) {
+        return this.#click(this.#searchHeaderTypeButton("上位効力型適用" + index));
+    }
     /** タブを変更し、成否を返す
      * @param {string} id
+     * @returns {boolean} タブの変更に成功したかどうか
      */
     changeTab(id) {
         const tabs = document.getElementsByClassName("tabs")[0];
         for (const element of tabs.children) {
             const button = element.firstElementChild;
             if (button.innerText === this.tabStrings[id]) {
-                button.click();
-                return true;
+                return this.#click(button);
             }
         }
         return false;
     }
 
-    /** ボタンDOMを取得する */
-    getButton(id, index) {
-        switch (id) {
-            /* ヘッダー型ボタン */
-            case "modeType": {
-                const pointSiblings = document.getElementById("coinamount").parentElement.children;
-                for (let i = 0; i < 6; i++) {
-                    if (pointSiblings[i]?.firstElementChild?.innerText === "モード型適用") {
-                        return pointSiblings[i].firstElementChild;
-                    }
-                }
-                break;
-            }
-            case "rankBonusType": {
-                const pointSiblings = document.getElementById("coinamount").parentElement.children;
-                for (let i = 0; i < 6; i++) {
-                    if (pointSiblings[i]?.firstElementChild?.innerText === ("上位効力型適用" + index)) {
-                        return pointSiblings[i].firstElementChild;
-                    }
-                }
-                break;
-            }
-
-            /* 通常タブ */
-            case "generator": {
-                const container = document.getElementsByClassName("generators-container")[0];
-                for (const element of container.children) {
-                    if (element.firstElementChild.innerText.includes(`発生器${index+1}:`)) {
-                        return element.children[1];
-                    }
-                }
-                break;
-            }
-            case "levelReset": {
-                const element = document.getElementById("levelreset");
-                return element?.firstElementChild;
-            }
-            case "rankReset": {
-                const element = document.getElementById("rankreset");
-                return element?.firstElementChild;
-            }
-            case "crownReset": {
-                const element = document.getElementById("crownreset");
-                return element?.firstElementChild;
-            }
-
-            /* 段位タブ */
-            case "startChallenge": {
-                // 完全挑戦ボタンも同じClass名 && 同じinnerTextなので外側で区別する
-                const containerElements = document.getElementsByClassName("challenges-container");
-                for (const container of containerElements) {
-                    if (container.firstChild.textContent.includes("挑戦:挑戦とは厳しい条件で昇段リセットを目指すことです。")) {
-                        const buttonElements = container.getElementsByClassName("challengeconfigbutton");
-                        for (const button of buttonElements) {
-                            if (button.innerText === "挑戦開始") {
-                                return button;
-                            }
-                        }
-                    }
-                }
-                break;
-            }
-            case "exitChallenge": {
-                const htmlCollection = document.getElementsByClassName("challengeconfigbutton");
-                for (const element of htmlCollection) {
-                    if (element.innerText === "挑戦放棄") {
-                        return element;
-                    }
-                }
-                break;
-            }
-            case "nextChallenge": {
-                const htmlCollection = document.getElementsByClassName("showclearedchallengesbutton");
-                for (const element of htmlCollection) {
-                    if (element.innerText === "未達成挑戦") {
-                        return element;
-                    }
-                }
-                break;
-            }
-            case "nextRankChallenge": {
-                const htmlCollection = document.getElementsByClassName("showclearedchallengesbutton");
-                for (const element of htmlCollection) {
-                    if (element.innerText === "未達成階位挑戦") {
-                        return element;
-                    }
-                }
-                break;
-            }
-
-            /* 自動タブ */
-            case "toggleAutoBuyer": {
-                const htmlCollection = document.getElementsByClassName("autobuyerbutton");
-                const targetStrings = [
-                    "発生器自動購入器",
-                    "時間加速器自動購入器",
-                    "自動昇段器",
-                    "段位効力自動購入器",
-                    "",
-                    "自動昇階器",
-                ];
-                for (const element of htmlCollection) {
-                    if (element.innerText === targetStrings[index]) {
-                        return element;
-                    }
-                }
-                break;
-            }
-            case "configAutoBuyer": {
-                const htmlCollection = document.getElementsByClassName("autobuyerbutton");
-                const targetStrings = [
-                    "自動昇段器設定:入手段位",
-                    "自動昇段器設定:停止段位",
-                    "自動昇階器設定:入手階位",
-                ];
-                for (const element of htmlCollection) {
-                    if (element.innerText === targetStrings[index]) {
-                        return element;
-                    }
-                }
-                break;
-            }
-
-            /* 輝きタブ */
-            case "spendBrightness": {
-                // todo: 2か所あるうちのどちらを操作するかを決める
-                const htmlCollection = document.getElementsByClassName("spendbrightnessbutton");
-                const spendValue = Math.pow(10, index);
-                for (const element of htmlCollection) {
-                    if (element.innerText === "煌き消費:" + spendValue) {
-                        return element;
-                    }
-                }
-                break;
-            }
-            default:
-                console.error(`getButton invalid id: ${id}`);
-        }
-    }
-
-    clickButton(id, index) {
-        const button = this.getButton(id, index);
-        if (button == null) {return false;}
-
-        // Chromium系は focusVisible に未対応
-        // button.focus({preventScroll: true, focusVisible: true});
-        button.click();
-        return true;
-    }
-
-    #reset(id) {
-        const button = this.getButton(id);
-        if (button == null || button.classList.contains("unavailable")) {
-            return false;
-        }
-        try {
-            this.skipConfirm = true;
-            button.click();
-        } finally {
-            this.skipConfirm = false;
-        }
-        return true;
-    }
+    /* 通常タブ操作 */
     resetLevel() {
-        return this.#reset("levelReset");
+        const button = document.getElementById("levelreset")?.firstElementChild;
+        return this.#click(button, true, true);
     }
     resetRank() {
-        return this.#reset("rankReset");
+        const button = document.getElementById("rankreset")?.firstElementChild;
+        return this.#click(button, true, true);
     }
     resetCrown() {
-        return this.#reset("crownReset");
+        const button = document.getElementById("crownreset")?.firstElementChild;
+        return this.#click(button, true, true);
     }
+    buyGenerator(index) {
+        const container = document.getElementsByClassName("generators-container")[0];
+        for (const element of container.children) {
+            if (element.firstElementChild.innerText.includes(`発生器${index + 1}:`)) {
+                return this.#click(element.children[1]);
+            }
+        }
+        return false;
+    }
+
+    /* 段位タブ操作 */
+    startChallenge() {
+        const containerElements = document.getElementsByClassName("challenges-container");
+        for (const container of containerElements) {
+            if (container.firstChild.textContent.includes("挑戦:挑戦とは厳しい条件で昇段リセットを目指すことです。")) {
+                const buttonElements = container.getElementsByClassName("challengeconfigbutton");
+                for (const button of buttonElements) {
+                    if (button.innerText === "挑戦開始") {
+                        return this.#click(button, false, true);
+                    }
+                }
+            }
+        }
+        return false;
+    }
+    exitChallenge() {
+        const htmlCollection = document.getElementsByClassName("challengeconfigbutton");
+        for (const element of htmlCollection) {
+            if (element.innerText === "挑戦放棄") {
+                return this.#click(element, false, true);
+            }
+        }
+        return false;
+    }
+    nextChallenge(isRank) {
+        const targetText = isRank ? "未達成階位挑戦" : "未達成挑戦"
+        const htmlCollection = document.getElementsByClassName("showclearedchallengesbutton");
+        for (const element of htmlCollection) {
+            if (element.innerText === targetText) {
+                return this.#click(element);
+            }
+        }
+        return false;
+    }
+
+    /* 自動タブ操作 */
+    toggleAutoBuyer(index) {
+        const targetString = [
+            "発生器自動購入器",
+            "時間加速器自動購入器",
+            "自動昇段器",
+            "段位効力自動購入器",
+            "",
+            "自動昇階器",
+        ][index];
+        const htmlCollection = document.getElementsByClassName("autobuyerbutton");
+        for (const element of htmlCollection) {
+            if (element.innerText === targetString) {
+                return this.#click(element);
+            }
+        }
+        return false;
+    }
+    configAutoBuyer(index, input) {
+        const targetString = [
+            "自動昇段器設定:入手段位",
+            "自動昇段器設定:停止段位",
+            "自動昇階器設定:入手階位",
+        ][index];
+        const htmlCollection = document.getElementsByClassName("autobuyerbutton");
+        for (const element of htmlCollection) {
+            if (element.innerText === targetString) {
+                return this.#click(element, false, false, input);
+            }
+        }
+        return false;
+    }
+
+    /* 輝きタブ操作 */
+    spendBrightness(index) {
+        // todo: 2か所あるうちのどちらを操作するかを決める
+        const targetText = "煌き消費:" + Math.pow(10, index);
+        const htmlCollection = document.getElementsByClassName("spendbrightnessbutton");
+        for (const element of htmlCollection) {
+            if (element.innerText === targetText) {
+                return this.#click(element);
+            }
+        }
+        return false;
+    } 
 }
 const gameConnector = new GameConnector;
 
@@ -430,22 +402,17 @@ function AddComponent() {
                         // 階位挑戦達成数0だとボタン自体が無い
                         if (nig.player.rankchallengecleared.length === 0) {return;}
                         if (nig.player.rankchallengecleared.includes(nig.calcchallengeid()) || nig.player.challenges.length === 0) {
-                            gameConnector.clickButton("nextRankChallenge");
+                            gameConnector.nextChallenge(true);
                             return;
                         }
                     } else {
                         if (nig.player.challengecleared.length === 255) {return;}
                         if (nig.player.challengecleared.includes(nig.calcchallengeid()) || nig.player.challenges.length === 0) {
-                            gameConnector.clickButton("nextChallenge");
+                            gameConnector.nextChallenge(false);
                             return;
                         }
                     }
-                    try {
-                        gameConnector.skipConfirm = true;
-                        gameConnector.clickButton("startChallenge");
-                    } finally {
-                        gameConnector.skipConfirm = false;
-                    }
+                    gameConnector.startChallenge();
                     return;
                 }
 
@@ -462,7 +429,7 @@ function AddComponent() {
                 if (nig.player.boughttype[0] && !nig.player.challenges.includes(3)) {
                     for (let i = 0; i < 8; i++) {
                         if (nig.player.generatorsMode[i] !== nig.player.setmodes[i]) {
-                            gameConnector.clickButton("modeType");
+                            gameConnector.useModeType();
                             return;
                         }
                     }
@@ -471,7 +438,7 @@ function AddComponent() {
                 // 発生器を買う
                 for (let i = 7; i >= 0; i--) {
                     if (this.shouldBuyGeneraor(i)) {
-                        gameConnector.clickButton("generator", i);
+                        gameConnector.buyGenerator(i);
                         return;
                     }
                 }
@@ -531,52 +498,37 @@ function AddComponent() {
                     return true;
                 }
                 if (nig.genautobuy !== generator) {
-                    gameConnector.clickButton("toggleAutoBuyer", 0);
+                    gameConnector.toggleAutoBuyer(0);
                     return true;
                 }
                 if (nig.accautobuy !== accelerator) {
-                    gameConnector.clickButton("toggleAutoBuyer", 1);
+                    gameConnector.toggleAutoBuyer(1);
                     return true;
                 }
                 if (nig.autolevel !== level) {
-                    gameConnector.clickButton("toggleAutoBuyer", 2);
+                    gameConnector.toggleAutoBuyer(2);
                     return true;
                 }
                 if (nig.litemautobuy !== levelItem) {
-                    gameConnector.clickButton("toggleAutoBuyer", 3);
+                    gameConnector.toggleAutoBuyer(3);
                     return true;
                 }
                 if (nig.autorank != rank) {
                     // falseにしたいとき、ボタンが消滅していれば操作不要
-                    if (gameConnector.clickButton("toggleAutoBuyer", 5) || rank) {
+                    if (gameConnector.toggleAutoBuyer(5) || rank) {
                         return true;
                     }
                 }
                 if (getLevel != null && !nig.autolevelnumber.eq(getLevel)) {
-                    try {
-                        gameConnector.injectPrompt = getLevel;
-                        gameConnector.clickButton("configAutoBuyer", 0);
-                    } finally {
-                        gameConnector.injectPrompt = null;
-                    }
+                    gameConnector.configAutoBuyer(0, getLevel);
                     return true;
                 }
                 if (stopLevel != null && !nig.autolevelstopnumber.eq(stopLevel)) {
-                    try {
-                        gameConnector.injectPrompt = stopLevel;
-                        gameConnector.clickButton("configAutoBuyer", 1);
-                    } finally {
-                        gameConnector.injectPrompt = null;
-                    }
+                    gameConnector.configAutoBuyer(1, stopLevel);
                     return true;
                 }
                 if (getRank != null && !nig.autoranknumber.eq(getRank)) {
-                    try {
-                        gameConnector.injectPrompt = getRank;
-                        gameConnector.clickButton("configAutoBuyer", 2);
-                    } finally {
-                        gameConnector.injectPrompt = null;
-                    }
+                    gameConnector.configAutoBuyer(2, getRank);
                     return true;
                 }
                 return false;
@@ -606,7 +558,7 @@ function AddComponent() {
                 switch (state.phase) {
                     case 0: {
                         // 上位効力を階位稼ぎモードにする
-                        gameConnector.clickButton("rankBonusType", 1);
+                        gameConnector.useRankBonusType(1);
                         state.phase = 1;
                         return;
                     }
@@ -627,7 +579,7 @@ function AddComponent() {
                     case 2: return; // 階位稼ぎ中
                     case 3: {
                         // 上位効力をポイント稼ぎモードにする
-                        gameConnector.clickButton("rankBonusType", 2);
+                        gameConnector.useRankBonusType(2);
                         state.phase = 4;
                         return;
                     }
@@ -658,7 +610,7 @@ function AddComponent() {
                             return;
                         }
                         if (!nig.autolevel) {
-                            gameConnector.clickButton("toggleAutoBuyer", 2);
+                            gameConnector.toggleAutoBuyer(2);
                         }
                         state.phase = 8;
                         return;
@@ -679,12 +631,7 @@ function AddComponent() {
                             return;
                         }
                         if (!nig.player.onchallenge) {
-                            try {
-                                gameConnector.skipConfirm = true;
-                                gameConnector.clickButton("startChallenge");
-                            } finally {
-                                gameConnector.skipConfirm = false;
-                            }
+                            gameConnector.startChallenge();
                         }
                         state.useBrightnessId = setInterval(this.updateUseBrightness, 100);
                         state.phase = 10;
@@ -712,12 +659,7 @@ function AddComponent() {
                                 gameConnector.changeTab("level");
                                 return;
                             }
-                            try {
-                                gameConnector.skipConfirm = true;
-                                gameConnector.clickButton("exitChallenge");
-                            } finally {
-                                gameConnector.skipConfirm = false;
-                            }
+                            gameConnector.exitChallenge();
                             return;
                         }
                         if (nig.player.currenttab !== "basic") {
@@ -753,7 +695,7 @@ function AddComponent() {
                 // todo: 
                 //   - 煌き消費量の調整
                 //   - 初回消費前に自動購入のため一定時間待つ
-                gameConnector.clickButton("spendBrightness", 2);
+                gameConnector.spendBrightness(2);
             },
         },
         mounted() {
