@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NewIncrementalExtender
 // @namespace    kaz_mighty
-// @version      2.0.1
+// @version      2.1.0-beta.1
 // @description  新しい放置ゲームの拡張
 // @author       kaz_mighty
 // @match        https://dem08656775.github.io/newincrementalgame/*
@@ -10,12 +10,11 @@
 // ==/UserScript==
 /* 
 # todo
-  - 1e214～で自動冠位をオンにすると無駄に自動購入をONにするのを修正
-  - 必要な場合でもオンにした直後に上位効力型2を使用しないのを修正
+  - [x]1e214～で自動冠位をオンにすると無駄に自動購入をONにするのを修正
+  - [x]必要な場合でもオンにした直後に上位効力型2を使用しないのを修正
+  - 冠位稼ぎ自動化の煌き消費量を設定可能にする
+  - 冠位稼ぎ自動化の煌き消費前にちょっとだけ待つ
   - 裏段位自動化
-  - ゲーム操作を別クラスに分離する
-    - try-finally操作も分離
-    - タブ操作もできれば分離したい
   - updateAutoSettingで設定は合ってるがそもそも効力がオフになってるときに止まらないので原因が分かりづらいかも
 */
 
@@ -552,12 +551,16 @@ function AddComponent() {
                         state.phase = 3;
                     }
                 }
-                if (state.phase >= 3 && state.phase < 6) {
-                    if (nig.player.levelresettime.gte(state.goalLevelResetTime)) {
-                        if (nig.player.level.gte("1e20")) {state.phase = 8;}
-                        else {state.phase = 6;}
+                if (state.phase >= 4) {
+                    if (state.phase < 6) {
+                        if (nig.player.levelresettime.gte(state.goalLevelResetTime)) {
+                            if (nig.player.level.gte("1e20")) {state.phase = 8;}
+                            else {state.phase = 6;}
+                        }
                     }
+                    if (nig.player.money.gte("1e214")) {state.phase = 11;}
                 }
+
                 switch (state.phase) {
                     case 0: {
                         // 上位効力を階位稼ぎモードにする
@@ -640,15 +643,14 @@ function AddComponent() {
                         state.phase = 10;
                         return;
                     }
-                    case 10: {
-                        // 煌きを消費してポイント稼ぎ中
-                        if (nig.player.money.gte("1e214")) {state.phase = 11;}
-                        return;
-                    }
+                    case 10: return; // 煌きを消費してポイント稼ぎ中
                     case 11: {
-                        // 自動化をオフにする
+                        // 自動化をオフにして1e216を目指す
                         if (this.updateAutoSetting(false, false, false, true, false, null, null, null)) {
                             return;
+                        }
+                        if (state.useBrightnessId === 0) {
+                            state.useBrightnessId = setInterval(this.updateUseBrightness, 100);
                         }
                         state.phase = 12;
                         return;
@@ -695,9 +697,6 @@ function AddComponent() {
                     return;
                 }
 
-                // todo: 
-                //   - 煌き消費量の調整
-                //   - 初回消費前に自動購入のため一定時間待つ
                 gameConnector.spendBrightness(2);
             },
         },
