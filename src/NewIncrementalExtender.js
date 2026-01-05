@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NewIncrementalExtender
 // @namespace    kaz_mighty
-// @version      2.1.0-beta.2
+// @version      2.1.0
 // @description  新しい放置ゲームの拡張
 // @author       kaz_mighty
 // @match        https://dem08656775.github.io/newincrementalgame/*
@@ -10,12 +10,9 @@
 // ==/UserScript==
 /* 
 # todo
-  - [x]1e214～で自動冠位をオンにすると無駄に自動購入をONにするのを修正
-  - [x]必要な場合でもオンにした直後に上位効力型2を使用しないのを修正
-  - [x]冠位稼ぎ自動化の煌き消費量を設定可能にする
-  - [x]冠位稼ぎ自動化の煌き消費前にちょっとだけ待つ
   - 裏段位自動化
   - updateAutoSettingで設定は合ってるがそもそも効力がオフになってるときに止まらないので原因が分かりづらいかも
+  - 冠位稼ぎ自動化にて、挑戦が1,5になっていなくてもそのまま挑戦開始してしまうのを修正する
 */
 
 (function() {
@@ -569,7 +566,7 @@ function AddComponent() {
                             else {state.phase = 6;}
                         }
                     }
-                    if (nig.player.money.gte("1e214")) {state.phase = 11;}
+                    if (state.phase < 11 && nig.player.money.gte("1e214")) {state.phase = 11;}
                 }
 
                 switch (state.phase) {
