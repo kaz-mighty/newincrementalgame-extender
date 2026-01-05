@@ -16,6 +16,7 @@
   - ゲーム操作を別クラスに分離する
     - try-finally操作も分離
     - タブ操作もできれば分離したい
+  - updateAutoSettingで設定は合ってるがそもそも効力がオフになってるときに止まらないので原因が分かりづらいかも
 */
 
 (function() {
@@ -26,7 +27,6 @@ console.log("NewIncrementalExtender enable!");
 /* ゲームへの操作を担当する */
 class GameConnector {
     static #singleton;
-
 
     constructor() {
         if (GameConnector.#singleton) {
@@ -41,6 +41,7 @@ class GameConnector {
             "shine": "輝き",
         };
 
+        /* confirmとpromptをスキップ可能にする */
         this.originalConfirm = unsafeWindow.confirm.bind(undefined);
         this.skipConfirm = false;
         unsafeWindow.confirm = this.#confirm.bind(this);
@@ -103,7 +104,7 @@ class GameConnector {
     useModeType() {
         return this.#click(this.#searchHeaderTypeButton("モード型適用"));
     }
-    useRankBonusType(i) {
+    useRankBonusType(index) {
         return this.#click(this.#searchHeaderTypeButton("上位効力型適用" + index));
     }
     /** タブを変更し、成否を返す
