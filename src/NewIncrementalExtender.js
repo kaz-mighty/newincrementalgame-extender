@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NewIncrementalExtender
 // @namespace    kaz_mighty
-// @version      2.1.0-beta.1
+// @version      2.1.0-beta.2
 // @description  新しい放置ゲームの拡張
 // @author       kaz_mighty
 // @match        https://dem08656775.github.io/newincrementalgame/*
@@ -12,8 +12,8 @@
 # todo
   - [x]1e214～で自動冠位をオンにすると無駄に自動購入をONにするのを修正
   - [x]必要な場合でもオンにした直後に上位効力型2を使用しないのを修正
-  - 冠位稼ぎ自動化の煌き消費量を設定可能にする
-  - 冠位稼ぎ自動化の煌き消費前にちょっとだけ待つ
+  - [x]冠位稼ぎ自動化の煌き消費量を設定可能にする
+  - [x]冠位稼ぎ自動化の煌き消費前にちょっとだけ待つ
   - 裏段位自動化
   - updateAutoSettingで設定は合ってるがそもそも効力がオフになってるときに止まらないので原因が分かりづらいかも
 */
@@ -294,7 +294,11 @@ function AddComponent() {
         </button>
         <span style="padding-right: 5px;">目標回数</span>
         <span style="padding-right: 5px;">段位: {{ autoCrownReset.goalLevelResetTime.toExponential(3) }}</span>
-        <span>階位: {{ autoCrownReset.goalRankResetTime }}</span>
+        <span style="padding-right: 5px;">階位: {{ autoCrownReset.goalRankResetTime }}</span>
+
+        <button type="button" class="autobuyerbutton" @click="toggleAutoCrownSpendBright()">
+          煌き消費単位 {{ Math.pow(10, autoCrownReset.spendBrightnessIndex) }}
+        </button>
       </div>
       <template v-for="(config, index) in autoCrownReset.autoResetConfig">
         <div v-if="index !== 0">
@@ -325,6 +329,7 @@ function AddComponent() {
                     useBrightnessId: 0,
                     goalLevelResetTime: new Decimal(1e8),
                     goalRankResetTime: new Decimal(10000),
+                    spendBrightnessIndex: 2,
                     autoResetConfig: [
                         {
                             needRank: "0",
@@ -470,6 +475,12 @@ function AddComponent() {
                 state.intervalId = setInterval(this.updateAutoCrownReset, 400);
                 state.phase = 0;
                 state.autoResetPhase = 0;
+                state.sleep = 0;
+            },
+            toggleAutoCrownSpendBright() {
+                const state = this.autoCrownReset;
+                state.spendBrightnessIndex += 1;
+                state.spendBrightnessIndex %= 3;
             },
             inputGoalResetTime(isRank) {
                 let input = prompt("目標段位/階位を入力");
@@ -628,6 +639,7 @@ function AddComponent() {
                         }
                         gameConnector.changeTab("level");
                         state.phase = 9;
+                        state.sleep = 3;
                         return;
                     }
                     case 9: {
@@ -638,6 +650,11 @@ function AddComponent() {
                         }
                         if (!nig.player.onchallenge) {
                             gameConnector.startChallenge();
+                            return;
+                        }
+                        if (state.sleep > 0) {
+                            state.sleep -= 1;
+                            return;
                         }
                         state.useBrightnessId = setInterval(this.updateUseBrightness, 100);
                         state.phase = 10;
@@ -697,7 +714,7 @@ function AddComponent() {
                     return;
                 }
 
-                gameConnector.spendBrightness(2);
+                gameConnector.spendBrightness(state.spendBrightnessIndex);
             },
         },
         mounted() {
