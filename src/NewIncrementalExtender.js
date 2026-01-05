@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NewIncrementalExtender
 // @namespace    kaz_mighty
-// @version      2.0.0-beta.3
+// @version      2.0.1
 // @description  新しい放置ゲームの拡張
 // @author       kaz_mighty
 // @match        https://dem08656775.github.io/newincrementalgame/*
@@ -261,9 +261,11 @@ function AddComponent() {
         template: 
 `
   <audio loop id="force-active" src="https://kaz-mighty.github.io/newincrementalgame-simulator/silent.wav"></audio>
-  <div @click="isCollapse = !isCollapse">
-    <span v-show="isCollapse">▼拡張機能を開く</span>
-    <span v-show="!isCollapse">▲閉じる</span>
+  <div>
+    <span @click="isCollapse = !isCollapse">
+      <span v-show="isCollapse">▼拡張機能を開く</span>
+      <span v-show="!isCollapse">▲閉じる</span>
+    </span>
   </div>
   <Transition name="collapse">
     <div class="collapse" :class="{ 'show': !isCollapse }" v-show="!isCollapse">
