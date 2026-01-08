@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NewIncrementalExtender
 // @namespace    kaz_mighty
-// @version      2.1.1-beta.1
+// @version      2.1.2-beta.1
 // @description  新しい放置ゲームの拡張
 // @author       kaz_mighty
 // @match        https://dem08656775.github.io/newincrementalgame/*
@@ -12,7 +12,6 @@
 # todo
   - 裏段位自動化
   - updateAutoSettingで設定は合ってるがそもそも効力がオフになってるときに止まらないので原因が分かりづらいかも
-  - 冠位稼ぎ自動化にて、挑戦が1,5になっていなくてもそのまま挑戦開始してしまうのを修正する
 */
 
 (function() {
@@ -142,6 +141,20 @@ class GameConnector {
     }
 
     /* 段位タブ操作 */
+    toggleChallengeKind(index) {
+        const containerElements = document.getElementsByClassName("challenges-container");
+        for (const container of containerElements) {
+            if (container.firstChild.textContent.includes("挑戦:挑戦とは厳しい条件で昇段リセットを目指すことです。")) {
+                const buttonElements = container.getElementsByClassName("challengeconfigbutton");
+                for (const button of buttonElements) {
+                    if (button.innerText === `挑戦 ${index + 1}`) {
+                        return this.#click(button);
+                    }
+                }
+            }
+        }
+        return false;
+    }
     startChallenge() {
         const containerElements = document.getElementsByClassName("challenges-container");
         for (const container of containerElements) {
@@ -500,7 +513,8 @@ function AddComponent() {
             },
             updateAutoSetting(generator, accelerator, level, levelItem, rank, getLevel, stopLevel, getRank) {
                 // 自動タブの設定を引数の通り設定する。
-                // 1回の呼び出しで最大1つのみ操作を行い、操作が必要だったときはtrue, 不要だったときはfalseを返す
+                // 1回の呼び出しで最大1つのみ操作を行う。
+                // 操作が必要だったときは(成否にかかわらず)true, 不要だったときはfalseを返す
                 const nig = document.getElementById("app").__vue_app__._instance.ctx;
 
                 if (nig.player.currenttab !== "auto") {
@@ -540,6 +554,23 @@ function AddComponent() {
                 if (getRank != null && !nig.autoranknumber.eq(getRank)) {
                     gameConnector.configAutoBuyer(2, getRank);
                     return true;
+                }
+                return false;
+            },
+            updateChallengeSetting(challengeIds) {
+                //挑戦タブの挑戦を引数の通り設定する。
+                // 1回の呼び出しで最大1つのみ操作を行う。
+                // 操作が必要だったときは(成否にかかわらず)true, 不要だったときはfalseを返す
+                const nig = document.getElementById("app").__vue_app__._instance.ctx;
+                if (nig.player.currenttab !== "level") {
+                    gameConnector.changeTab("level");
+                    return true;
+                }
+                for (let i = 0; i < 8; i++) {
+                    if (challengeIds.includes(i) !== nig.player.challenges.incldues(i)) {
+                        gameConnector.toggleChallengeKind(i);
+                        return true;
+                    }
                 }
                 return false;
             },
@@ -641,11 +672,8 @@ function AddComponent() {
                     }
                     case 9: {
                         // 挑戦を開始し、冠位を目指す
-                        if (nig.player.currenttab !== "level") {
-                            gameConnector.changeTab("level");
-                            return;
-                        }
                         if (!nig.player.onchallenge) {
+                            this.updateChallengeSetting([0, 4]);
                             gameConnector.startChallenge();
                             return;
                         }

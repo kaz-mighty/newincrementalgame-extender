@@ -48,8 +48,6 @@ Since the game is only available in Japanese, the following will only be written
 昇冠を目指す際は自動で**煌き消費を繰り返します**。  
 また、自動昇階器がONのまま効力変更で無効化されている場合があるため、終了後は注意しましょう。
 
-**現在、挑戦の設定が1,5になっていなくてもそのまま挑戦開始してしまう不具合があります**(修正予定)
-
 
 ## todo
 
