@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NewIncrementalExtender
 // @namespace    kaz_mighty
-// @version      2.1.2-beta.1
+// @version      2.2.0-beta.1
 // @description  新しい放置ゲームの拡張
 // @author       kaz_mighty
 // @match        https://dem08656775.github.io/newincrementalgame/*
@@ -296,18 +296,18 @@ function AddComponent() {
         <button type="button" class="autobuyerbutton" :class="{ 'selected': autoCrownReset.intervalId !== 0 }" @click="toggleAutoCrownReset()">
           自動化:冠位リセット
         </button>
-        <button type="button" class="autobuyerbutton" @click="inputGoalResetTime(false)">
-          目標段位リセ回数
+        <button type="button" class="autobuyerbutton lbutton" @click="inputGoalResetTime(false)">
+          目標段位リセット: {{ autoCrownReset.goalLevelResetTime.toExponential(3) }} 回
         </button>
-        <button type="button" class="autobuyerbutton" @click="inputGoalResetTime(true)">
-          目標階位リセ回数
+        <button type="button" class="autobuyerbutton lbutton" @click="inputGoalResetTime(true)">
+          目標階位リセット: {{ autoCrownReset.goalRankResetTime }} 回
         </button>
-        <span style="padding-right: 5px;">目標回数</span>
-        <span style="padding-right: 5px;">段位: {{ autoCrownReset.goalLevelResetTime.toExponential(3) }}</span>
-        <span style="padding-right: 5px;">階位: {{ autoCrownReset.goalRankResetTime }}</span>
 
         <button type="button" class="autobuyerbutton" @click="toggleAutoCrownSpendBright()">
           煌き消費単位 {{ Math.pow(10, autoCrownReset.spendBrightnessIndex) }}
+        </button>
+        <button type="button" class="autobuyerbutton" :class="{ 'selected': autoCrownReset.useChallenge !== 0 }" @click="toggleAutoCrownUseChallenge()">
+          挑戦1,5を使用する
         </button>
       </div>
       <template v-for="(config, index) in autoCrownReset.autoResetConfig">
@@ -340,6 +340,7 @@ function AddComponent() {
                     goalLevelResetTime: new Decimal(1e8),
                     goalRankResetTime: new Decimal(10000),
                     spendBrightnessIndex: 2,
+                    useChallenge: true,
                     autoResetConfig: [
                         {
                             needRank: "0",
@@ -491,6 +492,10 @@ function AddComponent() {
                 const state = this.autoCrownReset;
                 state.spendBrightnessIndex += 1;
                 state.spendBrightnessIndex %= 3;
+            },
+            toggleAutoCrownUseChallenge() {
+                const state = this.autoCrownReset;
+                state.useChallenge = !state.useChallenge;
             },
             inputGoalResetTime(isRank) {
                 let input = prompt("目標段位/階位を入力");
@@ -665,14 +670,13 @@ function AddComponent() {
                         if (this.updateAutoSetting(true, true, false, true, false, null, null, null)) {
                             return;
                         }
-                        gameConnector.changeTab("level");
                         state.phase = 9;
                         state.sleep = 3;
-                        return;
+                        // fall-throuth
                     }
                     case 9: {
                         // 挑戦を開始し、冠位を目指す
-                        if (!nig.player.onchallenge) {
+                        if (!nig.player.onchallenge && state.useChallenge) {
                             this.updateChallengeSetting([0, 4]);
                             gameConnector.startChallenge();
                             return;
