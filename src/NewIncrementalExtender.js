@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NewIncrementalExtender
 // @namespace    kaz_mighty
-// @version      2.2.0
+// @version      2.3.0
 // @description  新しい放置ゲームの拡張
 // @author       kaz_mighty
 // @match        https://dem08656775.github.io/newincrementalgame/*
@@ -290,6 +290,9 @@ function AddComponent() {
         <button type="button" class="autobuyerbutton" :class="{ 'selected': isAudioPlay }" @click="toggleAudio()">
           無音再生
         </button>
+        <button type="button" class="autobuyerbutton" @click="copyClipboard()">
+          {{ copyButtonText }}
+        </button>
       </div>
       <br>
       <div>
@@ -333,6 +336,7 @@ function AddComponent() {
                     isRank: false,
                 },
                 isAudioPlay: false,
+                copyButtonText: "データエクスポート",
 
                 autoCrownReset: {
                     intervalId: 0,
@@ -469,6 +473,21 @@ function AddComponent() {
                 } else {
                     audio.pause();
                 }
+            },
+
+            copyClipboard() {
+                const nig = document.getElementById("app").__vue_app__._instance.ctx;
+                const saveText = btoa(JSON.stringify(nig.players));
+                navigator.clipboard.writeText(saveText).then(
+                    () => {
+                        this.copyButtonText = "成功!";
+                        setTimeout(() => {this.copyButtonText = "データエクスポート";}, 1000);
+                    },
+                    () => {
+                        this.copyButtonText = "失敗...";
+                        setTimeout(() => {this.copyButtonText = "データエクスポート";}, 1000);
+                    }
+                );
             },
 
             toggleAutoCrownReset() {

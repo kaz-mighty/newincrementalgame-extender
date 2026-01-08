@@ -35,6 +35,10 @@ Since the game is only available in Japanese, the following will only be written
 これにより、非アクティブ時もゲームが減速しなくなります。
 (Chromeでのみ確認)
 
+### エクスポート
+
+クリップボードにセーブデータをコピーします。
+
 ### 冠位リセット自動化
 
 自動で冠位リセットを繰り返します。
