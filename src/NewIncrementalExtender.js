@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NewIncrementalExtender
 // @namespace    kaz_mighty
-// @version      2.1.0
+// @version      2.1.1-beta.1
 // @description  新しい放置ゲームの拡張
 // @author       kaz_mighty
 // @match        https://dem08656775.github.io/newincrementalgame/*
@@ -211,11 +211,11 @@ class GameConnector {
 
     /* 輝きタブ操作 */
     spendBrightness(index) {
-        // todo: 2か所あるうちのどちらを操作するかを決める
+        // 2か所あるうち、可視状態の方をクリックする。どちらも不可視なら何もしない。
         const targetText = "煌き消費:" + Math.pow(10, index);
         const htmlCollection = document.getElementsByClassName("spendbrightnessbutton");
         for (const element of htmlCollection) {
-            if (element.innerText === targetText) {
+            if (element.innerText === targetText && element.checkVisibility()) {
                 return this.#click(element);
             }
         }
