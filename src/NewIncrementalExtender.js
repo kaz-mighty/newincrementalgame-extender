@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NewIncrementalExtender
 // @namespace    kaz_mighty
-// @version      2.2.0-beta.1
+// @version      2.2.0
 // @description  新しい放置ゲームの拡張
 // @author       kaz_mighty
 // @match        https://dem08656775.github.io/newincrementalgame/*
@@ -296,17 +296,17 @@ function AddComponent() {
         <button type="button" class="autobuyerbutton" :class="{ 'selected': autoCrownReset.intervalId !== 0 }" @click="toggleAutoCrownReset()">
           自動化:冠位リセット
         </button>
-        <button type="button" class="autobuyerbutton lbutton" @click="inputGoalResetTime(false)">
-          目標段位リセット: {{ autoCrownReset.goalLevelResetTime.toExponential(3) }} 回
+        <button type="button" class="autobuyerbutton" style="width: 200px;" @click="inputGoalResetTime(false)">
+          目標段位リセット: {{ autoCrownReset.goalLevelResetTime.toExponential(2) }} 回
         </button>
-        <button type="button" class="autobuyerbutton lbutton" @click="inputGoalResetTime(true)">
+        <button type="button" class="autobuyerbutton" style="width: 200px;" @click="inputGoalResetTime(true)">
           目標階位リセット: {{ autoCrownReset.goalRankResetTime }} 回
         </button>
 
         <button type="button" class="autobuyerbutton" @click="toggleAutoCrownSpendBright()">
           煌き消費単位 {{ Math.pow(10, autoCrownReset.spendBrightnessIndex) }}
         </button>
-        <button type="button" class="autobuyerbutton" :class="{ 'selected': autoCrownReset.useChallenge !== 0 }" @click="toggleAutoCrownUseChallenge()">
+        <button type="button" class="autobuyerbutton" :class="{ 'selected': autoCrownReset.useChallenge }" @click="toggleAutoCrownUseChallenge()">
           挑戦1,5を使用する
         </button>
       </div>
@@ -572,7 +572,7 @@ function AddComponent() {
                     return true;
                 }
                 for (let i = 0; i < 8; i++) {
-                    if (challengeIds.includes(i) !== nig.player.challenges.incldues(i)) {
+                    if (challengeIds.includes(i) !== nig.player.challenges.includes(i)) {
                         gameConnector.toggleChallengeKind(i);
                         return true;
                     }
@@ -677,7 +677,9 @@ function AddComponent() {
                     case 9: {
                         // 挑戦を開始し、冠位を目指す
                         if (!nig.player.onchallenge && state.useChallenge) {
-                            this.updateChallengeSetting([0, 4]);
+                            if (this.updateChallengeSetting([0, 4])) {
+                                return;
+                            }
                             gameConnector.startChallenge();
                             return;
                         }
