@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NewIncrementalExtender
 // @namespace    kaz_mighty
-// @version      2.3.0
+// @version      2.4.0
 // @description  新しい放置ゲームの拡張
 // @author       kaz_mighty
 // @match        https://dem08656775.github.io/newincrementalgame/*
@@ -253,16 +253,15 @@ function AddComponent() {
     const style = document.createElement("style");
     style.textContent = `
 .collapse {
-    max-height: 160px;
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.2s ease;
 }
-.collapse-enter-active,
-.collapse-leave-active {
+.collapse.show {
+    grid-template-rows: 1fr;
+}
+.collapse > div {
     overflow: hidden;
-    transition: max-height 0.2s ease;
-}
-.collapse-enter-from,
-.collapse-leave-to {
-    max-height: 0;
 }
 `;
     document.head.appendChild(style);
@@ -277,25 +276,32 @@ function AddComponent() {
       <span v-show="!isCollapse">▲閉じる</span>
     </span>
   </div>
-  <Transition name="collapse">
-    <div class="collapse" :class="{ 'show': !isCollapse }" v-show="!isCollapse">
-      <div>
-        <button type="button" class="autobuyerbutton" :class="{ 'selected': autoChallenge.intervalId !== 0 && !autoChallenge.isRank }"
-          @click="toggleAutoChallenge(false)">
-          自動化:挑戦
-        </button>
-        <button type="button" class="autobuyerbutton" :class="{ 'selected': autoChallenge.intervalId !== 0 && autoChallenge.isRank }"
-          @click="toggleAutoChallenge(true)">
-          自動化:階位挑戦
-        </button>
-        <button type="button" class="autobuyerbutton" :class="{ 'selected': isAudioPlay }" @click="toggleAudio()">
-          無音再生
-        </button>
-        <button type="button" class="autobuyerbutton" @click="copyClipboard()">
-          {{ copyButtonText }}
-        </button>
-      </div>
-      <br>
+  <div class="collapse" :class="{ 'show': !isCollapse }"><div>
+    <div>
+      <button type="button" class="autobuyerbutton" :class="{ 'selected': autoChallenge.intervalId !== 0 && !autoChallenge.isRank }"
+        @click="toggleAutoChallenge(false)">
+        自動化:挑戦
+      </button>
+      <button type="button" class="autobuyerbutton" :class="{ 'selected': autoChallenge.intervalId !== 0 && autoChallenge.isRank }"
+        @click="toggleAutoChallenge(true)">
+        自動化:階位挑戦
+      </button>
+      <button type="button" class="autobuyerbutton" :class="{ 'selected': isAudioPlay }" @click="toggleAudio()">
+        無音再生
+      </button>
+      <button type="button" class="autobuyerbutton" @click="copyClipboard()">
+        {{ copyButtonText }}
+      </button>
+    </div>
+
+    <br>
+    <div>
+      <span @click="autoCrownReset.isCollapse = !autoCrownReset.isCollapse">
+        <span v-show="autoCrownReset.isCollapse">▼自動昇冠設定を開く</span>
+        <span v-show="!autoCrownReset.isCollapse">▲閉じる</span>
+      </span>
+    </div>
+    <div class="collapse" :class="{ 'show': !autoCrownReset.isCollapse }"><div>
       <div>
         <button type="button" class="autobuyerbutton" :class="{ 'selected': autoCrownReset.intervalId !== 0 }" @click="toggleAutoCrownReset()">
           自動化:冠位リセット
@@ -326,12 +332,13 @@ function AddComponent() {
           に設定する
         </div>
       </template>
-    </div>
-  </Transition>
+    </div></div>
+  </div></div>
 `,
         data() {
             return {
                 isCollapse: true,
+
                 autoChallenge: {
                     intervalId: 0,
                     isRank: false,
@@ -340,6 +347,8 @@ function AddComponent() {
                 copyButtonText: "データエクスポート",
 
                 autoCrownReset: {
+                    isCollapse: true,
+
                     intervalId: 0,
                     useBrightnessId: 0,
                     goalLevelResetTime: new Decimal(1e8),
