@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NewIncrementalExtender
 // @namespace    kaz_mighty
-// @version      2.4.0
+// @version      2.5.0
 // @description  新しい放置ゲームの拡張
 // @author       kaz_mighty
 // @match        https://dem08656775.github.io/newincrementalgame/*
@@ -224,6 +224,16 @@ class GameConnector {
     }
 
     /* 輝きタブ操作 */
+    spendShine(index) {
+        const targetText = "輝き消費:" + Math.pow(10, index);
+        const htmlCollection = document.getElementsByClassName("spendshinebutton");
+        for (const element of htmlCollection) {
+            if (element.innerText === targetText) {
+                return this.#click(element);
+            }
+        }
+        return false;
+    }
     spendBrightness(index) {
         // 2か所あるうち、可視状態の方をクリックする。どちらも不可視なら何もしない。
         const targetText = "煌き消費:" + Math.pow(10, index);
@@ -312,13 +322,25 @@ function AddComponent() {
         <button type="button" class="autobuyerbutton" style="width: 200px;" @click="inputGoalResetTime(true)">
           目標階位リセット: {{ autoCrownReset.goalRankResetTime }} 回
         </button>
-
-        <button type="button" class="autobuyerbutton" @click="toggleAutoCrownSpendBright()">
-          煌き消費単位 {{ Math.pow(10, autoCrownReset.spendBrightnessIndex) }}
-        </button>
         <button type="button" class="autobuyerbutton" :class="{ 'selected': autoCrownReset.useChallenge }" @click="toggleAutoCrownUseChallenge()">
           挑戦1,5を使用する
         </button>
+      </div>
+      <div>
+        <template v-for="i in [1, 2, 3, 4]">
+          <button type="button" class="autobuyerbutton" :class="{ 'selected': isSelectedSpendButton(0, i)}"
+            @click="choiceAutoCrownSpendShine(0, i)">
+            輝き消費単位: {{ Math.pow(10, i) }}
+          </button>
+        </template>
+      </div>
+      <div>
+        <template v-for="i in [0, 1, 2]">
+          <button type="button" class="autobuyerbutton" :class="{ 'selected': isSelectedSpendButton(1, i)}"
+            @click="choiceAutoCrownSpendShine(1, i)">
+            煌き消費単位: {{ Math.pow(10, i) }}
+          </button>
+        </template>
       </div>
       <template v-for="(config, index) in autoCrownReset.autoResetConfig">
         <div v-if="index !== 0">
@@ -351,10 +373,14 @@ function AddComponent() {
 
                     intervalId: 0,
                     useBrightnessId: 0,
+
                     goalLevelResetTime: new Decimal(1e8),
                     goalRankResetTime: new Decimal(10000),
-                    spendBrightnessIndex: 2,
                     useChallenge: true,
+                    shineSpend: {
+                        kind: 1,
+                        index: 2,
+                    },
                     autoResetConfig: [
                         {
                             needRank: "0",
@@ -509,18 +535,13 @@ function AddComponent() {
                     state.useBrightnessId = 0;
                     return;
                 }
-                if (!confirm("自動冠位リセットを開始しますか? これにより、段位と階位が失われるほか、煌きが自動で消費されます。")) {
+                if (!confirm("自動冠位リセットを開始しますか? これにより、段位と階位が失われるほか、輝き/煌きが自動で消費されます。")) {
                     return;
                 }
                 state.intervalId = setInterval(this.updateAutoCrownReset, 400);
                 state.phase = 0;
                 state.autoResetPhase = 0;
                 state.sleep = 0;
-            },
-            toggleAutoCrownSpendBright() {
-                const state = this.autoCrownReset;
-                state.spendBrightnessIndex += 1;
-                state.spendBrightnessIndex %= 3;
             },
             toggleAutoCrownUseChallenge() {
                 const state = this.autoCrownReset;
@@ -544,6 +565,15 @@ function AddComponent() {
                     input = input.toString();
                 }
                 this.autoCrownReset.autoResetConfig[index][key] = input;
+            },
+            isSelectedSpendButton(kind, index) {
+                const spend = this.autoCrownReset.shineSpend;
+                return spend.kind == kind && spend.index == index;
+            },
+            choiceAutoCrownSpendShine(kind, index) {
+                const spend = this.autoCrownReset.shineSpend;
+                spend.kind = kind;
+                spend.index = index;
             },
             updateAutoSetting(generator, accelerator, level, levelItem, rank, getLevel, stopLevel, getRank) {
                 // 自動タブの設定を引数の通り設定する。
@@ -774,7 +804,14 @@ function AddComponent() {
                     return;
                 }
 
-                gameConnector.spendBrightness(state.spendBrightnessIndex);
+                switch (state.shineSpend.kind) {
+                    case 0:
+                        gameConnector.spendShine(state.shineSpend.index);
+                        break;
+                    case 1:
+                        gameConnector.spendBrightness(state.shineSpend.index);
+                        break;
+                }
             },
         },
         mounted() {

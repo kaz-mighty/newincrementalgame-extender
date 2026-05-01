@@ -49,7 +49,7 @@ Since the game is only available in Japanese, the following will only be written
 
 (下位)効力と鋳片は自動化中は操作されません。
 
-昇冠を目指す際は自動で**煌き消費を繰り返します**。  
+昇冠を目指す際は自動で**輝き/煌き消費を繰り返します**。  
 また、自動昇階器がONのまま効力変更で無効化されている場合があるため、終了後は注意しましょう。
 
 
