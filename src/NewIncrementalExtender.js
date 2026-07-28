@@ -1,11 +1,10 @@
 // ==UserScript==
-// @name         NewIncrementalExtender
+// @name         NewIncrementalExtender-BetaInterim
 // @namespace    kaz_mighty
-// @version      2.5.0
+// @version      0.1.0
 // @description  新しい放置ゲームの拡張
 // @author       kaz_mighty
-// @match        https://dem08656775.github.io/newincrementalgame/*
-// @match        https://kaz-mighty.github.io/newincrementalgame/*
+// @match        https://dem08656775.github.io/newincrementalgamebeta/*
 // @icon         data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==
 // @grant        unsafeWindow
 // ==/UserScript==
@@ -246,7 +245,7 @@ class GameConnector {
         return false;
     } 
 }
-const gameConnector = new GameConnector;
+// const gameConnector = new GameConnector;
 
 
 function AddComponent() {
@@ -262,6 +261,9 @@ function AddComponent() {
     // css
     const style = document.createElement("style");
     style.textContent = `
+#extendApp {
+    margin: 8px;
+}
 .collapse {
     display: grid;
     grid-template-rows: 0fr;
@@ -288,14 +290,6 @@ function AddComponent() {
   </div>
   <div class="collapse" :class="{ 'show': !isCollapse }"><div>
     <div>
-      <button type="button" class="autobuyerbutton" :class="{ 'selected': autoChallenge.intervalId !== 0 && !autoChallenge.isRank }"
-        @click="toggleAutoChallenge(false)">
-        自動化:挑戦
-      </button>
-      <button type="button" class="autobuyerbutton" :class="{ 'selected': autoChallenge.intervalId !== 0 && autoChallenge.isRank }"
-        @click="toggleAutoChallenge(true)">
-        自動化:階位挑戦
-      </button>
       <button type="button" class="autobuyerbutton" :class="{ 'selected': isAudioPlay }" @click="toggleAudio()">
         無音再生
       </button>
@@ -303,58 +297,6 @@ function AddComponent() {
         {{ copyButtonText }}
       </button>
     </div>
-
-    <br>
-    <div>
-      <span @click="autoCrownReset.isCollapse = !autoCrownReset.isCollapse">
-        <span v-show="autoCrownReset.isCollapse">▼自動昇冠設定を開く</span>
-        <span v-show="!autoCrownReset.isCollapse">▲閉じる</span>
-      </span>
-    </div>
-    <div class="collapse" :class="{ 'show': !autoCrownReset.isCollapse }"><div>
-      <div>
-        <button type="button" class="autobuyerbutton" :class="{ 'selected': autoCrownReset.intervalId !== 0 }" @click="toggleAutoCrownReset()">
-          自動化:冠位リセット
-        </button>
-        <button type="button" class="autobuyerbutton" style="width: 200px;" @click="inputGoalResetTime(false)">
-          目標段位リセット: {{ autoCrownReset.goalLevelResetTime.toExponential(2) }} 回
-        </button>
-        <button type="button" class="autobuyerbutton" style="width: 200px;" @click="inputGoalResetTime(true)">
-          目標階位リセット: {{ autoCrownReset.goalRankResetTime }} 回
-        </button>
-        <button type="button" class="autobuyerbutton" :class="{ 'selected': autoCrownReset.useChallenge }" @click="toggleAutoCrownUseChallenge()">
-          挑戦1,5を使用する
-        </button>
-      </div>
-      <div>
-        <template v-for="i in [1, 2, 3, 4]">
-          <button type="button" class="autobuyerbutton" :class="{ 'selected': isSelectedSpendButton(0, i)}"
-            @click="choiceAutoCrownSpendShine(0, i)">
-            輝き消費単位: {{ Math.pow(10, i) }}
-          </button>
-        </template>
-      </div>
-      <div>
-        <template v-for="i in [0, 1, 2]">
-          <button type="button" class="autobuyerbutton" :class="{ 'selected': isSelectedSpendButton(1, i)}"
-            @click="choiceAutoCrownSpendShine(1, i)">
-            煌き消費単位: {{ Math.pow(10, i) }}
-          </button>
-        </template>
-      </div>
-      <template v-for="(config, index) in autoCrownReset.autoResetConfig">
-        <div v-if="index !== 0">
-          <button type="button" class="autobuyerbutton" @click="inputAutoResetConfig(index, 'needRank')">
-            階位 {{ config.needRank }} 以上で
-          </button>
-          入手段位 {{ config.getLevel }}、
-          <button type="button" class="autobuyerbutton" @click="inputAutoResetConfig(index, 'getRank')">
-            入手階位 {{ config.getRank }}
-          </button>
-          に設定する
-        </div>
-      </template>
-    </div></div>
   </div></div>
 `,
         data() {
@@ -409,99 +351,6 @@ function AddComponent() {
             }
         },
         methods: {
-            shouldBuyGeneraor(index) {
-                const nig = document.getElementById("app").__vue_app__._instance.ctx;
-                if (nig.player.onchallenge && nig.player.challenges.includes(6)) {
-                    if (index === 3 || index === 7) {return false;}
-                }
-                if (nig.player.onpchallenge && nig.player.pchallenges.includes(2)) {
-                    if (index === 2 || index === 5) {return false;}
-                }
-                return nig.player.money.gte(nig.player.generatorsCost[index]);
-            },
-
-            toggleAutoChallenge(isRank) {
-                if (this.autoChallenge.intervalId === 0) {
-                    this.autoChallenge.intervalId = setInterval(this.updateChallenge, 400);
-                    this.autoChallenge.isRank = isRank;
-                    return;
-                }
-                if (isRank !== this.autoChallenge.isRank) {
-                    this.autoChallenge.isRank = isRank;
-                    return;
-                }
-                clearInterval(this.autoChallenge.intervalId);
-                this.autoChallenge.intervalId = 0;
-                return;
-            },
-            updateChallenge() {
-                const nig = document.getElementById("app").__vue_app__._instance.ctx;
-
-                if (nig.player.onchallenge) {
-                    // 達成済みの挑戦中は何もしない(誤リセット防止のため)
-                    const cleared = this.autoChallenge.isRank
-                        ? nig.player.rankchallengecleared
-                        : nig.player.challengecleared;
-                    if (cleared.includes(nig.calcchallengeid())) {return;}
-                } else {
-                    // 挑戦中でないなら挑戦を開始する
-                    // ただし階位挑戦は昇段器ONなら停止するまでなにもしない
-                    if (this.autoChallenge.isRank) {
-                        if (nig.autolevel && nig.activechallengebonuses.includes(14) && nig.player.level.lt(nig.autolevelstopnumber)) {
-                            return;
-                        }
-                    }
-                    if (nig.player.currenttab !== "level") {
-                        gameConnector.changeTab("level");
-                        return;
-                    }
-                    if (this.autoChallenge.isRank) {
-                        if (nig.player.rankchallengecleared.length === 255) {return;}
-                        // 階位挑戦達成数0だとボタン自体が無い
-                        if (nig.player.rankchallengecleared.length === 0) {return;}
-                        if (nig.player.rankchallengecleared.includes(nig.calcchallengeid()) || nig.player.challenges.length === 0) {
-                            gameConnector.nextChallenge(true);
-                            return;
-                        }
-                    } else {
-                        if (nig.player.challengecleared.length === 255) {return;}
-                        if (nig.player.challengecleared.includes(nig.calcchallengeid()) || nig.player.challenges.length === 0) {
-                            gameConnector.nextChallenge(false);
-                            return;
-                        }
-                    }
-                    gameConnector.startChallenge();
-                    return;
-                }
-
-                if (nig.player.currenttab !== "basic") {
-                    gameConnector.changeTab("basic");
-                    return;
-                }
-                // 挑戦クリアできるならリセットする
-                if (this.autoChallenge.isRank ? gameConnector.resetRank() : gameConnector.resetLevel()) {
-                    return;
-                }
-
-                // モード型使用
-                if (nig.player.boughttype[0] && !nig.player.challenges.includes(3)) {
-                    for (let i = 0; i < 8; i++) {
-                        if (nig.player.generatorsMode[i] !== nig.player.setmodes[i]) {
-                            gameConnector.useModeType();
-                            return;
-                        }
-                    }
-                }
-
-                // 発生器を買う
-                for (let i = 7; i >= 0; i--) {
-                    if (this.shouldBuyGeneraor(i)) {
-                        gameConnector.buyGenerator(i);
-                        return;
-                    }
-                }
-            },
-
             toggleAudio() {
                 const audio = document.getElementById("force-active");
                 if (audio.paused) {
@@ -524,294 +373,6 @@ function AddComponent() {
                         setTimeout(() => {this.copyButtonText = "データエクスポート";}, 1000);
                     }
                 );
-            },
-
-            toggleAutoCrownReset() {
-                const state = this.autoCrownReset;
-                if (state.intervalId !== 0) {
-                    clearInterval(state.intervalId);
-                    clearInterval(state.useBrightnessId);
-                    state.intervalId = 0;
-                    state.useBrightnessId = 0;
-                    return;
-                }
-                if (!confirm("自動冠位リセットを開始しますか? これにより、段位と階位が失われるほか、輝き/煌きが自動で消費されます。")) {
-                    return;
-                }
-                state.intervalId = setInterval(this.updateAutoCrownReset, 400);
-                state.phase = 0;
-                state.autoResetPhase = 0;
-                state.sleep = 0;
-            },
-            toggleAutoCrownUseChallenge() {
-                const state = this.autoCrownReset;
-                state.useChallenge = !state.useChallenge;
-            },
-            inputGoalResetTime(isRank) {
-                let input = prompt("目標段位/階位を入力");
-                input = new Decimal(input);
-                if (isRank) {
-                    this.autoCrownReset.goalRankResetTime = input;
-                } else {
-                    this.autoCrownReset.goalLevelResetTime = input;
-                }
-            },
-            inputAutoResetConfig(index, key) {
-                let input = prompt("階位を入力");
-                input = new Decimal(input);
-                if (input.gte(1e5)) {
-                    input = input.toExponential(3);
-                } else {
-                    input = input.toString();
-                }
-                this.autoCrownReset.autoResetConfig[index][key] = input;
-            },
-            isSelectedSpendButton(kind, index) {
-                const spend = this.autoCrownReset.shineSpend;
-                return spend.kind == kind && spend.index == index;
-            },
-            choiceAutoCrownSpendShine(kind, index) {
-                const spend = this.autoCrownReset.shineSpend;
-                spend.kind = kind;
-                spend.index = index;
-            },
-            updateAutoSetting(generator, accelerator, level, levelItem, rank, getLevel, stopLevel, getRank) {
-                // 自動タブの設定を引数の通り設定する。
-                // 1回の呼び出しで最大1つのみ操作を行う。
-                // 操作が必要だったときは(成否にかかわらず)true, 不要だったときはfalseを返す
-                const nig = document.getElementById("app").__vue_app__._instance.ctx;
-
-                if (nig.player.currenttab !== "auto") {
-                    gameConnector.changeTab("auto");
-                    return true;
-                }
-                if (nig.genautobuy !== generator) {
-                    gameConnector.toggleAutoBuyer(0);
-                    return true;
-                }
-                if (nig.accautobuy !== accelerator) {
-                    gameConnector.toggleAutoBuyer(1);
-                    return true;
-                }
-                if (nig.autolevel !== level) {
-                    gameConnector.toggleAutoBuyer(2);
-                    return true;
-                }
-                if (nig.litemautobuy !== levelItem) {
-                    gameConnector.toggleAutoBuyer(3);
-                    return true;
-                }
-                if (nig.autorank != rank) {
-                    // falseにしたいとき、ボタンが消滅していれば操作不要
-                    if (gameConnector.toggleAutoBuyer(5) || rank) {
-                        return true;
-                    }
-                }
-                if (getLevel != null && !nig.autolevelnumber.eq(getLevel)) {
-                    gameConnector.configAutoBuyer(0, getLevel);
-                    return true;
-                }
-                if (stopLevel != null && !nig.autolevelstopnumber.eq(stopLevel)) {
-                    gameConnector.configAutoBuyer(1, stopLevel);
-                    return true;
-                }
-                if (getRank != null && !nig.autoranknumber.eq(getRank)) {
-                    gameConnector.configAutoBuyer(2, getRank);
-                    return true;
-                }
-                return false;
-            },
-            updateChallengeSetting(challengeIds) {
-                //挑戦タブの挑戦を引数の通り設定する。
-                // 1回の呼び出しで最大1つのみ操作を行う。
-                // 操作が必要だったときは(成否にかかわらず)true, 不要だったときはfalseを返す
-                const nig = document.getElementById("app").__vue_app__._instance.ctx;
-                if (nig.player.currenttab !== "level") {
-                    gameConnector.changeTab("level");
-                    return true;
-                }
-                for (let i = 0; i < 8; i++) {
-                    if (challengeIds.includes(i) !== nig.player.challenges.includes(i)) {
-                        gameConnector.toggleChallengeKind(i);
-                        return true;
-                    }
-                }
-                return false;
-            },
-            updateAutoCrownReset() {
-                const nig = document.getElementById("app").__vue_app__._instance.ctx;
-                const state = this.autoCrownReset;
-
-                if (state.phase < 3) {
-                    while (state.autoResetPhase + 1 < state.autoResetConfig.length) {
-                        if (nig.player.rank.lt(state.autoResetConfig[state.autoResetPhase + 1].needRank)) {
-                            break;
-                        }
-                        state.autoResetPhase += 1;
-                        if (state.phase === 2) {state.phase = 1;}
-                    }
-                    if (nig.player.rank.gte(260000) && nig.player.rankresettime.gte(state.goalRankResetTime)) {
-                        state.phase = 3;
-                    }
-                }
-                if (state.phase >= 4) {
-                    if (state.phase < 6) {
-                        if (nig.player.levelresettime.gte(state.goalLevelResetTime)) {
-                            if (nig.player.level.gte("1e20")) {state.phase = 8;}
-                            else {state.phase = 6;}
-                        }
-                    }
-                    if (state.phase < 11 && nig.player.money.gte("1e214")) {state.phase = 11;}
-                }
-
-                switch (state.phase) {
-                    case 0: {
-                        // 上位効力を階位稼ぎモードにする
-                        gameConnector.useRankBonusType(1);
-                        state.phase = 1;
-                        return;
-                    }
-                    case 1: {
-                        // 自動化全てを有効にし、パラメータを設定して階位を稼ぐ
-                        if (this.updateAutoSetting(
-                            true, true, true, true, true, 
-                            state.autoResetConfig[state.autoResetPhase].getLevel,
-                            state.autoResetConfig[state.autoResetPhase].stopLevel,
-                            state.autoResetConfig[state.autoResetPhase === 0 ? 1 : state.autoResetPhase].getRank
-                        )) {
-                            return;
-                        }
-                        gameConnector.changeTab("basic");
-                        state.phase = 2;
-                        return;
-                    }
-                    case 2: return; // 階位稼ぎ中
-                    case 3: {
-                        // 上位効力をポイント稼ぎモードにする
-                        gameConnector.useRankBonusType(2);
-                        state.phase = 4;
-                        return;
-                    }
-                    case 4: {
-                        // 自動化を段位稼ぎモードにして段位を稼ぐ
-                        if (this.updateAutoSetting(true, true, true, true, false, "0", "Infinity", null)) {
-                            return;
-                        }
-
-                        gameConnector.changeTab("basic");
-                        state.phase = 5;
-                        return;
-                    }
-                    case 5: return; // 段位稼ぎ中
-                    case 6: {
-                        // 約1秒だけ自動昇段器をオフにして段位を稼ぐ
-                        if (this.updateAutoSetting(true, true, false, true, false, "0", "Infinity", null)) {
-                            return;
-                        }
-                        state.phase = 7;
-                        state.sleep = 4;
-                        return;
-                    }
-                    case 7: {
-                        // 前フェーズの続き
-                        if (state.sleep > 0) {
-                            state.sleep -= 1;
-                            return;
-                        }
-                        if (!nig.autolevel) {
-                            gameConnector.toggleAutoBuyer(2);
-                        }
-                        state.phase = 8;
-                        return;
-                    }
-                    case 8: {
-                        // phase8から開始する場合を考慮して全自動化をチェックする
-                        if (this.updateAutoSetting(true, true, false, true, false, null, null, null)) {
-                            return;
-                        }
-                        state.phase = 9;
-                        state.sleep = 3;
-                        // fall-throuth
-                    }
-                    case 9: {
-                        // 挑戦を開始し、冠位を目指す
-                        if (!nig.player.onchallenge && state.useChallenge) {
-                            if (this.updateChallengeSetting([0, 4])) {
-                                return;
-                            }
-                            gameConnector.startChallenge();
-                            return;
-                        }
-                        if (state.sleep > 0) {
-                            state.sleep -= 1;
-                            return;
-                        }
-                        state.useBrightnessId = setInterval(this.updateUseBrightness, 100);
-                        state.phase = 10;
-                        return;
-                    }
-                    case 10: return; // 煌きを消費してポイント稼ぎ中
-                    case 11: {
-                        // 自動化をオフにして1e216を目指す
-                        if (this.updateAutoSetting(false, false, false, true, false, null, null, null)) {
-                            return;
-                        }
-                        if (state.useBrightnessId === 0) {
-                            state.useBrightnessId = setInterval(this.updateUseBrightness, 100);
-                        }
-                        state.phase = 12;
-                        return;
-                    }
-                    case 12: {
-                        // 冠位に到達したら挑戦解除してからリセットする
-                        if (nig.player.money.lt("1e216")) {return;}
-
-                        if (nig.player.onchallenge) {
-                            if (nig.player.currenttab !== "level") {
-                                gameConnector.changeTab("level");
-                                return;
-                            }
-                            gameConnector.exitChallenge();
-                            return;
-                        }
-                        if (nig.player.currenttab !== "basic") {
-                            gameConnector.changeTab("basic");
-                            return;
-                        }
-                        if (gameConnector.resetCrown()) {
-                            clearInterval(state.useBrightnessId);
-                            state.useBrightnessId = 0;
-                            state.phase = 0;
-                            state.autoResetPhase = 0;
-                        }
-                        return;
-                    }
-
-                }
-            },
-            updateUseBrightness() {
-                const nig = document.getElementById("app").__vue_app__._instance.ctx;
-                const state = this.autoCrownReset;
-
-                if (state.phase !== 10 && state.phase !== 12) {
-                    return;
-                }
-                if (nig.player.money.gte("1e216")) {
-                    return;
-                }
-                if (nig.player.currenttab !== "shine") {
-                    gameConnector.changeTab("shine");
-                    return;
-                }
-
-                switch (state.shineSpend.kind) {
-                    case 0:
-                        gameConnector.spendShine(state.shineSpend.index);
-                        break;
-                    case 1:
-                        gameConnector.spendBrightness(state.shineSpend.index);
-                        break;
-                }
             },
         },
         mounted() {
