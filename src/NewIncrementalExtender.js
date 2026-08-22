@@ -1,11 +1,10 @@
 // ==UserScript==
-// @name         NewIncrementalExtender
+// @name         NewIncrementalExtender for fork
 // @namespace    kaz_mighty
-// @version      2.5.0
+// @version      1.0.0-beta.1
 // @description  新しい放置ゲームの拡張
 // @author       kaz_mighty
-// @match        https://dem08656775.github.io/newincrementalgame/*
-// @match        https://kaz-mighty.github.io/newincrementalgame/*
+// @match        http://127.0.0.1:3000/*
 // @icon         data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==
 // @grant        unsafeWindow
 // ==/UserScript==
@@ -18,7 +17,10 @@
 (function() {
 'use strict';
 
-console.log("NewIncrementalExtender enable!");
+console.log("NewIncrementalExtender for fork start!");
+if (document.title != "新しい放置ゲーム(1).file") return;
+if (!Array.prototype.some.call(document.scripts, (item) => item.src.includes("game/components.js"))) return;
+console.log("NewIncrementalExtender for fork enable!");
 
 /* ゲームへの操作を担当する */
 class GameConnector {
@@ -64,22 +66,22 @@ class GameConnector {
 
 
     /** ボタンをクリックします
-     * @param {?HTMLElement} button 
+     * @param {?Element} button 
      * @param {boolean} checkAvailability
      * @param {boolean} skipConfirm
      * @param {?string} injectPrompt
      * @returns {boolean} 操作に成功したかどうかを返す
      */
     #click(button, checkAvailability = false, skipConfirm = false, injectPrompt = null) {
-        if (button == null) {return false;}
+        if (button == null || !(button instanceof HTMLElement)) {return false;}
         if (checkAvailability && button.classList.contains("unavailable")) {
             return false;
         }
         try {
             this.skipConfirm = skipConfirm;
             this.injectPrompt = injectPrompt;
-            // Chromium系は focusVisible に未対応
-            // button.focus({preventScroll: true, focusVisible: true});
+            // Chromium系も2026年2月に focusVisible に対応した
+            button.focus({preventScroll: true, focusVisible: true});
             button.click();
         } finally {
             this.skipConfirm = false;
@@ -90,10 +92,10 @@ class GameConnector {
 
     /* ヘッダー操作 */
     #searchHeaderTypeButton(text) {
-        const pointSiblings = document.getElementById("coinamount").parentElement.children;
-        for (let i = 0; i < 6; i++) {
-            if (pointSiblings[i]?.firstElementChild?.innerText === text) {
-                return pointSiblings[i].firstElementChild;
+        const buttons = document.getElementById("header-type-button").children;
+        for (const button of buttons) {
+            if (button.innerText === text) {
+                return button;
             }
         }
     }
@@ -108,33 +110,28 @@ class GameConnector {
      * @returns {boolean} タブの変更に成功したかどうか
      */
     changeTab(id) {
-        const tabs = document.getElementsByClassName("tabs")[0];
-        for (const element of tabs.children) {
-            const button = element.firstElementChild;
-            if (button.innerText === this.tabStrings[id]) {
-                return this.#click(button);
-            }
-        }
-        return false;
+        const button = document.getElementById(id)?.firstElementChild;
+        return this.#click(button);
     }
 
     /* 通常タブ操作 */
     resetLevel() {
-        const button = document.getElementById("levelreset")?.firstElementChild;
+        const button = document.getElementById("level-reset")?.firstElementChild;
         return this.#click(button, true, true);
     }
     resetRank() {
-        const button = document.getElementById("rankreset")?.firstElementChild;
+        const button = document.getElementById("rank-reset")?.firstElementChild;
         return this.#click(button, true, true);
     }
     resetCrown() {
-        const button = document.getElementById("crownreset")?.firstElementChild;
+        const button = document.getElementById("crown-reset")?.firstElementChild;
         return this.#click(button, true, true);
     }
     buyGenerator(index) {
-        const container = document.getElementsByClassName("generators-container")[0];
-        for (const element of container.children) {
-            if (element.firstElementChild.innerText.includes(`発生器${index + 1}:`)) {
+        const generators = document.getElementById("generators-container")?.children;
+        if (generators == null) {return false;}
+        for (const element of generators) {
+            if (element.firstElementChild?.innerText.includes(`発生器${index + 1}:`)) {
                 return this.#click(element.children[1]);
             }
         }
@@ -143,51 +140,27 @@ class GameConnector {
 
     /* 段位タブ操作 */
     toggleChallengeKind(index) {
-        const containerElements = document.getElementsByClassName("challenges-container");
-        for (const container of containerElements) {
-            if (container.firstChild.textContent.includes("挑戦:挑戦とは厳しい条件で昇段リセットを目指すことです。")) {
-                const buttonElements = container.getElementsByClassName("challengeconfigbutton");
-                for (const button of buttonElements) {
-                    if (button.innerText === `挑戦 ${index + 1}`) {
-                        return this.#click(button);
-                    }
-                }
+        const buttons = document.getElementById("challenges-container")?.getElementsByClassName("challenge-button");
+        if (buttons == null) {return false;}
+        for (const button of buttons) {
+            if (button.innerText === `挑戦 ${index + 1}`) {
+                return this.#click(button);
             }
         }
         return false;
     }
     startChallenge() {
-        const containerElements = document.getElementsByClassName("challenges-container");
-        for (const container of containerElements) {
-            if (container.firstChild.textContent.includes("挑戦:挑戦とは厳しい条件で昇段リセットを目指すことです。")) {
-                const buttonElements = container.getElementsByClassName("challengeconfigbutton");
-                for (const button of buttonElements) {
-                    if (button.innerText === "挑戦開始") {
-                        return this.#click(button, false, true);
-                    }
-                }
-            }
-        }
-        return false;
+        const button = document.getElementById("challenge-start");
+        return this.#click(button, false, true);
     }
     exitChallenge() {
-        const htmlCollection = document.getElementsByClassName("challengeconfigbutton");
-        for (const element of htmlCollection) {
-            if (element.innerText === "挑戦放棄") {
-                return this.#click(element, false, true);
-            }
-        }
-        return false;
+        const button = document.getElementById("challenge-exit");
+        return this.#click(button, false, true);
     }
     nextChallenge(isRank) {
-        const targetText = isRank ? "未達成階位挑戦" : "未達成挑戦"
-        const htmlCollection = document.getElementsByClassName("showclearedchallengesbutton");
-        for (const element of htmlCollection) {
-            if (element.innerText === targetText) {
-                return this.#click(element);
-            }
-        }
-        return false;
+        const targetId = isRank ? "search-uncleared-rank" : "search-uncleared";
+        const button = document.getElementById(targetId);
+        return this.#click(button);
     }
 
     /* 自動タブ操作 */
@@ -200,7 +173,7 @@ class GameConnector {
             "",
             "自動昇階器",
         ][index];
-        const htmlCollection = document.getElementsByClassName("autobuyerbutton");
+        const htmlCollection = document.getElementsByClassName("auto-buyer-button");
         for (const element of htmlCollection) {
             if (element.innerText === targetString) {
                 return this.#click(element);
@@ -213,8 +186,9 @@ class GameConnector {
             "自動昇段器設定:入手段位",
             "自動昇段器設定:停止段位",
             "自動昇階器設定:入手階位",
+            "設定:リセットポイント",
         ][index];
-        const htmlCollection = document.getElementsByClassName("autobuyerbutton");
+        const htmlCollection = document.getElementsByClassName("auto-buyer-button");
         for (const element of htmlCollection) {
             if (element.innerText === targetString) {
                 return this.#click(element, false, false, input);
@@ -226,7 +200,7 @@ class GameConnector {
     /* 輝きタブ操作 */
     spendShine(index) {
         const targetText = "輝き消費:" + Math.pow(10, index);
-        const htmlCollection = document.getElementsByClassName("spendshinebutton");
+        const htmlCollection = document.getElementsByClassName("spend-shine-button");
         for (const element of htmlCollection) {
             if (element.innerText === targetText) {
                 return this.#click(element);
@@ -237,7 +211,7 @@ class GameConnector {
     spendBrightness(index) {
         // 2か所あるうち、可視状態の方をクリックする。どちらも不可視なら何もしない。
         const targetText = "煌き消費:" + Math.pow(10, index);
-        const htmlCollection = document.getElementsByClassName("spendbrightnessbutton");
+        const htmlCollection = document.getElementsByClassName("spend-brightness-button");
         for (const element of htmlCollection) {
             if (element.innerText === targetText && element.checkVisibility()) {
                 return this.#click(element);
@@ -273,10 +247,14 @@ function AddComponent() {
 .collapse > div {
     overflow: hidden;
 }
+button:focus-visible {
+    border-color: blue;
+    outline: blue solid 3px;
+}
 `;
     document.head.appendChild(style);
 
-    Vue.createApp({
+    Vue.createApp(Vue.defineComponent({
         template: 
 `
   <audio loop id="force-active" src="https://kaz-mighty.github.io/newincrementalgame-simulator/silent.wav"></audio>
@@ -410,14 +388,14 @@ function AddComponent() {
         },
         methods: {
             shouldBuyGeneraor(index) {
-                const nig = document.getElementById("app").__vue_app__._instance.ctx;
-                if (nig.player.onchallenge && nig.player.challenges.includes(6)) {
+                const player = currentPlayer.value;
+                if (player.challenge.isActive(6)) {
                     if (index === 3 || index === 7) {return false;}
                 }
-                if (nig.player.onpchallenge && nig.player.pchallenges.includes(2)) {
+                if (player.challenge.isPerfectActive(2)) {
                     if (index === 2 || index === 5) {return false;}
                 }
-                return nig.player.money.gte(nig.player.generatorsCost[index]);
+                return player.money.gte(player.generator.generatorsCost[index]);
             },
 
             toggleAutoChallenge(isRank) {
@@ -435,37 +413,38 @@ function AddComponent() {
                 return;
             },
             updateChallenge() {
-                const nig = document.getElementById("app").__vue_app__._instance.ctx;
+                const player = currentPlayer.value;
+                const challenge = player.challenge;
 
-                if (nig.player.onchallenge) {
+                if (challenge.onChallenge) {
                     // 達成済みの挑戦中は何もしない(誤リセット防止のため)
                     const cleared = this.autoChallenge.isRank
-                        ? nig.player.rankchallengecleared
-                        : nig.player.challengecleared;
-                    if (cleared.includes(nig.calcchallengeid())) {return;}
+                        ? challenge.rankCleared
+                        : challenge.cleared;
+                    if (cleared.includes(challenge.getChallengeId())) {return;}
                 } else {
                     // 挑戦中でないなら挑戦を開始する
                     // ただし階位挑戦は昇段器ONなら停止するまでなにもしない
                     if (this.autoChallenge.isRank) {
-                        if (nig.autolevel && nig.activechallengebonuses.includes(14) && nig.player.level.lt(nig.autolevelstopnumber)) {
+                        if (player.common.autoLevel && challenge.activeBonuses.has(14) && player.level.lt(player.common.autoLevelStopNumber)) {
                             return;
                         }
                     }
-                    if (nig.player.currenttab !== "level") {
+                    if (player.currentTab !== "level") {
                         gameConnector.changeTab("level");
                         return;
                     }
                     if (this.autoChallenge.isRank) {
-                        if (nig.player.rankchallengecleared.length === 255) {return;}
+                        if (challenge.rankCleared.length === 255) {return;}
                         // 階位挑戦達成数0だとボタン自体が無い
-                        if (nig.player.rankchallengecleared.length === 0) {return;}
-                        if (nig.player.rankchallengecleared.includes(nig.calcchallengeid()) || nig.player.challenges.length === 0) {
+                        if (challenge.rankCleared.length === 0) {return;}
+                        if (challenge.rankCleared.includes(challenge.getChallengeId()) || challenge.selected.size === 0) {
                             gameConnector.nextChallenge(true);
                             return;
                         }
                     } else {
-                        if (nig.player.challengecleared.length === 255) {return;}
-                        if (nig.player.challengecleared.includes(nig.calcchallengeid()) || nig.player.challenges.length === 0) {
+                        if (challenge.cleared.length === 255) {return;}
+                        if (challenge.cleared.includes(challenge.getChallengeId()) || challenge.selected.size === 0) {
                             gameConnector.nextChallenge(false);
                             return;
                         }
@@ -474,7 +453,7 @@ function AddComponent() {
                     return;
                 }
 
-                if (nig.player.currenttab !== "basic") {
+                if (player.currentTab !== "basic") {
                     gameConnector.changeTab("basic");
                     return;
                 }
@@ -484,9 +463,9 @@ function AddComponent() {
                 }
 
                 // モード型使用
-                if (nig.player.boughttype[0] && !nig.player.challenges.includes(3)) {
+                if (player.shine.boughtType[0] && !player.challenge.selected.has(3)) {
                     for (let i = 0; i < 8; i++) {
-                        if (nig.player.generatorsMode[i] !== nig.player.setmodes[i]) {
+                        if (player.generator.generatorsMode[i] !== player.generator.modeType[i]) {
                             gameConnector.useModeType();
                             return;
                         }
@@ -503,7 +482,7 @@ function AddComponent() {
             },
 
             toggleAudio() {
-                const audio = document.getElementById("force-active");
+                const audio = /** @type {HTMLAudioElement} */ (document.getElementById("force-active"));
                 if (audio.paused) {
                     audio.play();
                 } else {
@@ -512,8 +491,7 @@ function AddComponent() {
             },
 
             copyClipboard() {
-                const nig = document.getElementById("app").__vue_app__._instance.ctx;
-                const saveText = btoa(JSON.stringify(nig.players));
+                const saveText = nigInstance.value.dataSave();
                 navigator.clipboard.writeText(saveText).then(
                     () => {
                         this.copyButtonText = "成功!";
@@ -549,22 +527,19 @@ function AddComponent() {
             },
             inputGoalResetTime(isRank) {
                 let input = prompt("目標段位/階位を入力");
-                input = new Decimal(input);
+                let value = new Decimal(input);
                 if (isRank) {
-                    this.autoCrownReset.goalRankResetTime = input;
+                    this.autoCrownReset.goalRankResetTime = value;
                 } else {
-                    this.autoCrownReset.goalLevelResetTime = input;
+                    this.autoCrownReset.goalLevelResetTime = value;
                 }
             },
             inputAutoResetConfig(index, key) {
                 let input = prompt("階位を入力");
-                input = new Decimal(input);
-                if (input.gte(1e5)) {
-                    input = input.toExponential(3);
-                } else {
-                    input = input.toString();
-                }
-                this.autoCrownReset.autoResetConfig[index][key] = input;
+                let value = new Decimal(input);
+                this.autoCrownReset.autoResetConfig[index][key] = value.gte(1e5)
+                    ? value.toExponential(3)
+                    : value.toString();
             },
             isSelectedSpendButton(kind, index) {
                 const spend = this.autoCrownReset.shineSpend;
@@ -579,43 +554,43 @@ function AddComponent() {
                 // 自動タブの設定を引数の通り設定する。
                 // 1回の呼び出しで最大1つのみ操作を行う。
                 // 操作が必要だったときは(成否にかかわらず)true, 不要だったときはfalseを返す
-                const nig = document.getElementById("app").__vue_app__._instance.ctx;
+                const player = currentPlayer.value;
 
-                if (nig.player.currenttab !== "auto") {
+                if (player.currentTab !== "auto") {
                     gameConnector.changeTab("auto");
                     return true;
                 }
-                if (nig.genautobuy !== generator) {
+                if (player.common.genAutoBuy !== generator) {
                     gameConnector.toggleAutoBuyer(0);
                     return true;
                 }
-                if (nig.accautobuy !== accelerator) {
+                if (player.common.accAutoBuy !== accelerator) {
                     gameConnector.toggleAutoBuyer(1);
                     return true;
                 }
-                if (nig.autolevel !== level) {
+                if (player.common.autoLevel !== level) {
                     gameConnector.toggleAutoBuyer(2);
                     return true;
                 }
-                if (nig.litemautobuy !== levelItem) {
+                if (player.common.levelItemAutoBuy !== levelItem) {
                     gameConnector.toggleAutoBuyer(3);
                     return true;
                 }
-                if (nig.autorank != rank) {
+                if (player.common.autoRank != rank) {
                     // falseにしたいとき、ボタンが消滅していれば操作不要
                     if (gameConnector.toggleAutoBuyer(5) || rank) {
                         return true;
                     }
                 }
-                if (getLevel != null && !nig.autolevelnumber.eq(getLevel)) {
+                if (getLevel != null && !player.common.autoLevelNumber.eq(getLevel)) {
                     gameConnector.configAutoBuyer(0, getLevel);
                     return true;
                 }
-                if (stopLevel != null && !nig.autolevelstopnumber.eq(stopLevel)) {
+                if (stopLevel != null && !player.common.autoLevelStopNumber.eq(stopLevel)) {
                     gameConnector.configAutoBuyer(1, stopLevel);
                     return true;
                 }
-                if (getRank != null && !nig.autoranknumber.eq(getRank)) {
+                if (getRank != null && !player.common.autoRankNumber.eq(getRank)) {
                     gameConnector.configAutoBuyer(2, getRank);
                     return true;
                 }
@@ -625,13 +600,13 @@ function AddComponent() {
                 //挑戦タブの挑戦を引数の通り設定する。
                 // 1回の呼び出しで最大1つのみ操作を行う。
                 // 操作が必要だったときは(成否にかかわらず)true, 不要だったときはfalseを返す
-                const nig = document.getElementById("app").__vue_app__._instance.ctx;
-                if (nig.player.currenttab !== "level") {
+                const player = currentPlayer.value;
+                if (player.currentTab !== "level") {
                     gameConnector.changeTab("level");
                     return true;
                 }
                 for (let i = 0; i < 8; i++) {
-                    if (challengeIds.includes(i) !== nig.player.challenges.includes(i)) {
+                    if (challengeIds.includes(i) !== player.challenge.selected.has(i)) {
                         gameConnector.toggleChallengeKind(i);
                         return true;
                     }
@@ -639,29 +614,29 @@ function AddComponent() {
                 return false;
             },
             updateAutoCrownReset() {
-                const nig = document.getElementById("app").__vue_app__._instance.ctx;
+                const player = currentPlayer.value;
                 const state = this.autoCrownReset;
 
                 if (state.phase < 3) {
                     while (state.autoResetPhase + 1 < state.autoResetConfig.length) {
-                        if (nig.player.rank.lt(state.autoResetConfig[state.autoResetPhase + 1].needRank)) {
+                        if (player.rank.lt(state.autoResetConfig[state.autoResetPhase + 1].needRank)) {
                             break;
                         }
                         state.autoResetPhase += 1;
                         if (state.phase === 2) {state.phase = 1;}
                     }
-                    if (nig.player.rank.gte(260000) && nig.player.rankresettime.gte(state.goalRankResetTime)) {
+                    if (player.rank.gte(260000) && player.rankResetTime.gte(state.goalRankResetTime)) {
                         state.phase = 3;
                     }
                 }
                 if (state.phase >= 4) {
                     if (state.phase < 6) {
-                        if (nig.player.levelresettime.gte(state.goalLevelResetTime)) {
-                            if (nig.player.level.gte("1e20")) {state.phase = 8;}
+                        if (player.levelResetTime.gte(state.goalLevelResetTime)) {
+                            if (player.level.gte("1e20")) {state.phase = 8;}
                             else {state.phase = 6;}
                         }
                     }
-                    if (state.phase < 11 && nig.player.money.gte("1e214")) {state.phase = 11;}
+                    if (state.phase < 11 && player.money.gte("1e214")) {state.phase = 11;}
                 }
 
                 switch (state.phase) {
@@ -718,12 +693,13 @@ function AddComponent() {
                             state.sleep -= 1;
                             return;
                         }
-                        if (!nig.autolevel) {
+                        if (!player.common.autoLevel) {
                             gameConnector.toggleAutoBuyer(2);
                         }
                         state.phase = 8;
                         return;
                     }
+                    // @ts-expect-error fall-through
                     case 8: {
                         // phase8から開始する場合を考慮して全自動化をチェックする
                         if (this.updateAutoSetting(true, true, false, true, false, null, null, null)) {
@@ -735,7 +711,7 @@ function AddComponent() {
                     }
                     case 9: {
                         // 挑戦を開始し、冠位を目指す
-                        if (!nig.player.onchallenge && state.useChallenge) {
+                        if (!player.challenge.onChallenge && state.useChallenge) {
                             if (this.updateChallengeSetting([0, 4])) {
                                 return;
                             }
@@ -764,17 +740,17 @@ function AddComponent() {
                     }
                     case 12: {
                         // 冠位に到達したら挑戦解除してからリセットする
-                        if (nig.player.money.lt("1e216")) {return;}
+                        if (player.money.lt("1e216")) {return;}
 
-                        if (nig.player.onchallenge) {
-                            if (nig.player.currenttab !== "level") {
+                        if (player.challenge.onChallenge) {
+                            if (player.currentTab !== "level") {
                                 gameConnector.changeTab("level");
                                 return;
                             }
                             gameConnector.exitChallenge();
                             return;
                         }
-                        if (nig.player.currenttab !== "basic") {
+                        if (player.currentTab !== "basic") {
                             gameConnector.changeTab("basic");
                             return;
                         }
@@ -790,16 +766,16 @@ function AddComponent() {
                 }
             },
             updateUseBrightness() {
-                const nig = document.getElementById("app").__vue_app__._instance.ctx;
+                const player = currentPlayer.value;
                 const state = this.autoCrownReset;
 
                 if (state.phase !== 10 && state.phase !== 12) {
                     return;
                 }
-                if (nig.player.money.gte("1e216")) {
+                if (player.money.gte("1e216")) {
                     return;
                 }
-                if (nig.player.currenttab !== "shine") {
+                if (player.currentTab !== "shine") {
                     gameConnector.changeTab("shine");
                     return;
                 }
@@ -815,12 +791,12 @@ function AddComponent() {
             },
         },
         mounted() {
-            const audio = document.getElementById("force-active");
+            const audio = /** @type {HTMLAudioElement} */ (document.getElementById("force-active"));
             audio.volume = 0.05;
             audio.addEventListener("play", () => {this.isAudioPlay = true;});
             audio.addEventListener("pause", () => {this.isAudioPlay = false;});
         },
-    }).mount(vueContainer);
+    })).mount(vueContainer);
 }
 
     AddComponent();
