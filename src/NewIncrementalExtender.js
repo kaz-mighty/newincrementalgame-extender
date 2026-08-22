@@ -24,6 +24,7 @@
 
   /* ゲームへの操作を担当する */
   class GameConnector {
+    /** @type {GameConnector} */
     static #singleton;
 
     constructor() {
@@ -40,14 +41,17 @@
       };
 
       /* confirmとpromptをスキップ可能にする */
+      /** @type {typeof unsafeWindow.confirm} */
       this.originalConfirm = unsafeWindow.confirm.bind(undefined);
       this.skipConfirm = false;
       unsafeWindow.confirm = this.#confirm.bind(this);
+      /** @type {typeof unsafeWindow.prompt} */
       this.originalPrompt = unsafeWindow.prompt.bind(undefined);
       this.injectPrompt = null;
       unsafeWindow.prompt = this.#prompt.bind(this);
     }
 
+    /** @param {string} [message] */
     #confirm(message) {
       if (this.skipConfirm) {
         console.log(`confirm skip. message: ${message}`);
@@ -56,6 +60,10 @@
       return this.originalConfirm(message);
     }
 
+    /**
+     * @param {string} [message]
+     * @param {string} [_default]
+     */
     #prompt(message, _default) {
       if (this.injectPrompt != null) {
         console.log(`prompt skip. message: ${message}`);
@@ -66,10 +74,10 @@
 
 
     /** ボタンをクリックします
-     * @param {?Element} button 
-     * @param {boolean} checkAvailability
-     * @param {boolean} skipConfirm
-     * @param {?string} injectPrompt
+     * @param {?Element} [button]
+     * @param {boolean} [checkAvailability]
+     * @param {boolean} [skipConfirm]
+     * @param {?string} [injectPrompt]
      * @returns {boolean} 操作に成功したかどうかを返す
      */
     #click(button, checkAvailability = false, skipConfirm = false, injectPrompt = null) {
@@ -92,7 +100,8 @@
 
     /* ヘッダー操作 */
     #searchHeaderTypeButton(text) {
-      const buttons = document.getElementById("header-type-button").children;
+      const buttons = document.getElementById("header-type-button")?.children;
+      if (buttons == null) {return undefined;}
       for (const button of buttons) {
         if (button.innerText === text) {
           return button;
@@ -228,7 +237,7 @@
     vueContainer.id = "extendApp";
     // 余計な余白を消してから挿入
     const firstTextNode = document.body.firstChild;
-    if (firstTextNode.nodeType === Node.TEXT_NODE) {
+    if (firstTextNode?.nodeType === Node.TEXT_NODE) {
       document.body.removeChild(firstTextNode);
     }
     document.body.insertBefore(vueContainer, document.body.firstChild);
@@ -355,9 +364,11 @@ button:focus-visible {
             goalRankResetTime: new Decimal(10000),
             useChallenge: true,
             shineSpend: {
+              /** @type {0 | 1} */ 
               kind: 1,
               index: 2,
             },
+            /** @type {{needRank: string, getLevel: string, stopLevel: string, getRank?: string}[]} */
             autoResetConfig: [
               {
                 needRank: "0",
@@ -386,6 +397,7 @@ button:focus-visible {
         }
       },
       methods: {
+        /** @param {number} index */
         shouldBuyGeneraor(index) {
           const player = currentPlayer.value;
           if (player.challenge.isActive(6)) {
@@ -397,6 +409,7 @@ button:focus-visible {
           return player.money.gte(player.generator.generatorsCost[index]);
         },
 
+        /** @param {boolean} isRank */
         toggleAutoChallenge(isRank) {
           if (this.autoChallenge.intervalId === 0) {
             this.autoChallenge.intervalId = setInterval(this.updateChallenge, 400);
@@ -524,8 +537,10 @@ button:focus-visible {
           const state = this.autoCrownReset;
           state.useChallenge = !state.useChallenge;
         },
+        /** @param {boolean} isRank */
         inputGoalResetTime(isRank) {
           let input = prompt("目標段位/階位を入力");
+          if (input == null) {return;}
           let value = new Decimal(input);
           if (isRank) {
             this.autoCrownReset.goalRankResetTime = value;
@@ -533,22 +548,45 @@ button:focus-visible {
             this.autoCrownReset.goalLevelResetTime = value;
           }
         },
+        /**
+         * @param {number} index
+         * @param {string} key
+         */
         inputAutoResetConfig(index, key) {
           let input = prompt("階位を入力");
+          if (input == null) {return;}
           let value = new Decimal(input);
           this.autoCrownReset.autoResetConfig[index][key] = value.gte(1e5)
             ? value.toExponential(3)
             : value.toString();
         },
+        /**
+         * @param {0 | 1} kind
+         * @param {number} index
+         */
         isSelectedSpendButton(kind, index) {
           const spend = this.autoCrownReset.shineSpend;
           return spend.kind == kind && spend.index == index;
         },
+        /**
+         * @param {0 | 1} kind
+         * @param {number} index
+         */
         choiceAutoCrownSpendShine(kind, index) {
           const spend = this.autoCrownReset.shineSpend;
           spend.kind = kind;
           spend.index = index;
         },
+        /**
+         * @param {boolean} generator
+         * @param {boolean} accelerator
+         * @param {boolean} level
+         * @param {boolean} levelItem
+         * @param {boolean} rank
+         * @param {?string} getLevel
+         * @param {?string} stopLevel
+         * @param {?string} getRank
+         */
         updateAutoSetting(generator, accelerator, level, levelItem, rank, getLevel, stopLevel, getRank) {
           // 自動タブの設定を引数の通り設定する。
           // 1回の呼び出しで最大1つのみ操作を行う。
@@ -595,6 +633,7 @@ button:focus-visible {
           }
           return false;
         },
+        /** @param {number[]} challengeIds */
         updateChallengeSetting(challengeIds) {
           //挑戦タブの挑戦を引数の通り設定する。
           // 1回の呼び出しで最大1つのみ操作を行う。
