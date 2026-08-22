@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "@types/tampermonkey": "^5.0.5",
+    "vue": "3.4.5",
+    "break_infinity.js": "1.2.0"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "esnext",
+    "moduleResolution": "bundler", //ts 5.9以前のデフォルト値(classic)だとVue等がimportできない
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "strict": false,
+    "noFallthroughCasesInSwitch": true,
+  },
+  "include": [
+    "global.d.ts",
+    "@types/*",
+    "src/*",
+  ],
+  "references": [
+    {
+      "path": "../newincrementalgame/jsconfig.json"
+    }
+  ]
+}
