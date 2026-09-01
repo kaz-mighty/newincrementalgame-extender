@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NewIncrementalExtender
 // @namespace    kaz_mighty
-// @version      2.5.0
+// @version      2.6.0
 // @description  新しい放置ゲームの拡張
 // @author       kaz_mighty
 // @match        https://dem08656775.github.io/newincrementalgame/*
@@ -19,6 +19,9 @@
 'use strict';
 
 console.log("NewIncrementalExtender enable!");
+
+const CLICK_INTERVAL = 300;
+const REPEAT_INTERVAL = 100;
 
 /* ゲームへの操作を担当する */
 class GameConnector {
@@ -422,7 +425,7 @@ function AddComponent() {
 
             toggleAutoChallenge(isRank) {
                 if (this.autoChallenge.intervalId === 0) {
-                    this.autoChallenge.intervalId = setInterval(this.updateChallenge, 400);
+                    this.autoChallenge.intervalId = setInterval(this.updateChallenge, CLICK_INTERVAL);
                     this.autoChallenge.isRank = isRank;
                     return;
                 }
@@ -538,7 +541,7 @@ function AddComponent() {
                 if (!confirm("自動冠位リセットを開始しますか? これにより、段位と階位が失われるほか、輝き/煌きが自動で消費されます。")) {
                     return;
                 }
-                state.intervalId = setInterval(this.updateAutoCrownReset, 400);
+                state.intervalId = setInterval(this.updateAutoCrownReset, CLICK_INTERVAL);
                 state.phase = 0;
                 state.autoResetPhase = 0;
                 state.sleep = 0;
@@ -746,7 +749,7 @@ function AddComponent() {
                             state.sleep -= 1;
                             return;
                         }
-                        state.useBrightnessId = setInterval(this.updateUseBrightness, 100);
+                        state.useBrightnessId = setInterval(this.updateUseBrightness, REPEAT_INTERVAL);
                         state.phase = 10;
                         return;
                     }
@@ -757,7 +760,7 @@ function AddComponent() {
                             return;
                         }
                         if (state.useBrightnessId === 0) {
-                            state.useBrightnessId = setInterval(this.updateUseBrightness, 100);
+                            state.useBrightnessId = setInterval(this.updateUseBrightness, REPEAT_INTERVAL);
                         }
                         state.phase = 12;
                         return;
