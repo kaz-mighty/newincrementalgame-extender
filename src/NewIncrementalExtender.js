@@ -260,6 +260,9 @@ button:focus-visible {
     border-color: blue;
     outline: blue solid 3px;
 }
+.set-chip button {
+    width: 120px;
+}
 `;
     document.head.appendChild(style);
 

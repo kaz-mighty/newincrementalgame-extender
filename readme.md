@@ -52,6 +52,9 @@ Since the game is only available in Japanese, the following will only be written
 昇冠を目指す際は自動で**輝き/煌き消費を繰り返します**。  
 また、自動昇階器がONのまま効力変更で無効化されている場合があるため、終了後は注意しましょう。
 
+### その他
+
+鋳片効力ボタンの横幅を縮めます。
 
 ## todo
 
