@@ -14,9 +14,4 @@
     "@types/*",
     "src/*",
   ],
-  "references": [
-    {
-      "path": "../newincrementalgame/jsconfig.json"
-    }
-  ]
 }

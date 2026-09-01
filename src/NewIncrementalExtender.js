@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NewIncrementalExtender for fork
 // @namespace    kaz_mighty
-// @version      1.0.0-beta.2
+// @version      1.0.0-beta.3
 // @description  新しい放置ゲームの拡張
 // @author       kaz_mighty
 // @match        http://127.0.0.1:3000/*
@@ -84,6 +84,7 @@
      * @returns {boolean} 操作に成功したかどうかを返す
      */
     #click(button, checkAvailability = false, skipConfirm = false, injectPrompt = null) {
+      // todo: 仕様変更等でボタン取得に失敗しても分かりづらいので、例外投げた方がいいかもしれない
       if (button == null || !(button instanceof HTMLElement)) {return false;}
       if (checkAvailability && button.classList.contains("unavailable")) {
         return false;
@@ -122,21 +123,21 @@
      * @returns {boolean} タブの変更に成功したかどうか
      */
     changeTab(id) {
-      const button = document.getElementById(id)?.firstElementChild;
+      const button = document.getElementById(id);
       return this.#click(button);
     }
 
     /* 通常タブ操作 */
     resetLevel() {
-      const button = document.getElementById("level-reset")?.firstElementChild;
+      const button = document.getElementById("level-reset");
       return this.#click(button, true, true);
     }
     resetRank() {
-      const button = document.getElementById("rank-reset")?.firstElementChild;
+      const button = document.getElementById("rank-reset");
       return this.#click(button, true, true);
     }
     resetCrown() {
-      const button = document.getElementById("crown-reset")?.firstElementChild;
+      const button = document.getElementById("crown-reset");
       return this.#click(button, true, true);
     }
     buyGenerator(index) {
