@@ -13,7 +13,7 @@ Since the game is only available in Japanese, the following will only be written
 
 ## 機能
 
-各種自動化器は手動時のボタン操作をシミュレートしています。(操作間隔0.4s, 輝き消費のみ0.1s)  
+各種自動化器は手動時のボタン操作をシミュレートしています。(操作間隔0.3s, 輝き消費のみ0.1s)  
 そのため、(ゲーム内の)タブも勝手に切り替わります。  
 ただし`window.confirm()`や`window.prompt()`はスキップ/自動入力します。
 
