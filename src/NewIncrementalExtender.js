@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name         NewIncrementalExtender
 // @namespace    kaz_mighty
-// @version      2.6.0
+// @version      2.7.0
 // @description  新しい放置ゲームの拡張
 // @author       kaz_mighty
 // @match        https://dem08656775.github.io/newincrementalgame/*
-// @match        https://kaz-mighty.github.io/newincrementalgame/*
+// @match        https://kaz-mighty.github.io/newincrementalgame/origin-fast/*
 // @icon         data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==
 // @grant        unsafeWindow
 // ==/UserScript==
